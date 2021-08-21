@@ -6,7 +6,7 @@ import {
 import * as cdk from "@aws-cdk/core";
 import * as SeonCdkPipeline from "../lib/seon-cdk-pipeline-stack";
 
-test("Empty Stack", () => {
+test("Pipeline Stack", () => {
   const app = new cdk.App();
   // WHEN
   const stack = new SeonCdkPipeline.SeonCdkPipelineStack(app, "MyTestStack");
@@ -20,3 +20,4 @@ test("Empty Stack", () => {
     )
   );
 });
+
