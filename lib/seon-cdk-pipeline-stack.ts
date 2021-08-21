@@ -19,9 +19,11 @@ export class SeonCdkPipelineStack extends cdk.Stack {
     const pipeline = new Pipeline(this, "Pipeline", {
       pipelineName: "Pipeline",
       crossAccountKeys: false,
+      restartExecutionOnUpdate: true,
     });
 
-    const sourceOutput = new Artifact("SourceOutput");
+    const CDK_SOURCE_OUTPUT = new Artifact("CDKSourceOutput");
+    const LAMBDA_COMPUTE_SOURCE_OUTPUT = new Artifact("LambdaComputeSourceOutput");
 
     pipeline.addStage({
       stageName: "Source",
@@ -30,28 +32,50 @@ export class SeonCdkPipelineStack extends cdk.Stack {
           owner: "SEON-GmbH",
           repo: "seon-cdk-pipeline",
           branch: "main",
-          actionName: "PipelineSource",
+          actionName: "Pipeline_Source",
           oauthToken: SecretValue.secretsManager("seon-github-token"),
-          output: sourceOutput,
+          output: CDK_SOURCE_OUTPUT,
+        }),
+        new GitHubSourceAction({
+          owner: "SEON-GmbH",
+          repo: "seon-lambda-compute",
+          branch: "main",
+          actionName: "LambdaCompute_Source",
+          oauthToken: SecretValue.secretsManager("seon-github-token"),
+          output: LAMBDA_COMPUTE_SOURCE_OUTPUT,
         }),
       ],
     });
 
-    const cdkBuildOutput = new Artifact("CdkBuildOutput");
+    const CDK_BUILD_OUTPUT = new Artifact("CdkBuildOutput");
+    const LAMBDA_COMPUTE_BUILD_OUTPUT = new Artifact("ServiceBuildOutput");
 
     pipeline.addStage({
       stageName: "Build",
       actions: [
         new CodeBuildAction({
           actionName: "CDK_Build",
-          input: sourceOutput,
-          outputs: [cdkBuildOutput],
+          input: CDK_SOURCE_OUTPUT,
+          outputs: [CDK_BUILD_OUTPUT],
           project: new PipelineProject(this, "CdkBuildProject", {
             environment: {
               buildImage: LinuxBuildImage.STANDARD_5_0,
             },
             buildSpec: BuildSpec.fromSourceFilename(
               "build-specs/cdk-build-spec.yml"
+            ),
+          }),
+        }),
+        new CodeBuildAction({
+          actionName: "Lambda_Compute_Build",
+          input: LAMBDA_COMPUTE_SOURCE_OUTPUT,
+          outputs: [LAMBDA_COMPUTE_BUILD_OUTPUT],
+          project: new PipelineProject(this, "LambdaComputeBuildProject", {
+            environment: {
+              buildImage: LinuxBuildImage.STANDARD_5_0,
+            },
+            buildSpec: BuildSpec.fromSourceFilename(
+              "build-specs/service-build-spec.yml"
             ),
           }),
         }),
@@ -64,7 +88,7 @@ export class SeonCdkPipelineStack extends cdk.Stack {
         new CloudFormationCreateUpdateStackAction({
           actionName: "Pipeline_Update",
           stackName: "SeonCdkPipelineStack",
-          templatePath: cdkBuildOutput.atPath(
+          templatePath: CDK_BUILD_OUTPUT.atPath(
             "SeonCdkPipelineStack.template.json"
           ),
           adminPermissions: true,
