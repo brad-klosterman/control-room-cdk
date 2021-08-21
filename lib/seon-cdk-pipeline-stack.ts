@@ -23,7 +23,7 @@ export class SeonCdkPipelineStack extends cdk.Stack {
     });
 
     const CDK_SOURCE_OUTPUT = new Artifact("CDKSourceOutput");
-    const LAMBDA_COMPUTE_SOURCE_OUTPUT = new Artifact("LambdaComputeSourceOutput");
+    const SEON_LAMBDA_SOURCE_OUTPUT = new Artifact("SeonLambdaSourceOutput");
 
     pipeline.addStage({
       stageName: "Source",
@@ -38,17 +38,17 @@ export class SeonCdkPipelineStack extends cdk.Stack {
         }),
         new GitHubSourceAction({
           owner: "SEON-GmbH",
-          repo: "seon-lambda-compute",
+          repo: "seon-lambda",
           branch: "main",
-          actionName: "LambdaCompute_Source",
+          actionName: "Seon_Lambda_Source",
           oauthToken: SecretValue.secretsManager("seon-github-token"),
-          output: LAMBDA_COMPUTE_SOURCE_OUTPUT,
+          output: SEON_LAMBDA_SOURCE_OUTPUT,
         }),
       ],
     });
 
     const CDK_BUILD_OUTPUT = new Artifact("CdkBuildOutput");
-    const LAMBDA_COMPUTE_BUILD_OUTPUT = new Artifact("ServiceBuildOutput");
+    const SEON_LAMBDA_BUILD_OUTPUT = new Artifact("SeonLambdaBuildOutput");
 
     pipeline.addStage({
       stageName: "Build",
@@ -67,10 +67,10 @@ export class SeonCdkPipelineStack extends cdk.Stack {
           }),
         }),
         new CodeBuildAction({
-          actionName: "Lambda_Compute_Build",
-          input: LAMBDA_COMPUTE_SOURCE_OUTPUT,
-          outputs: [LAMBDA_COMPUTE_BUILD_OUTPUT],
-          project: new PipelineProject(this, "LambdaComputeBuildProject", {
+          actionName: "Seon_Lambda_Build",
+          input: SEON_LAMBDA_SOURCE_OUTPUT,
+          outputs: [SEON_LAMBDA_BUILD_OUTPUT],
+          project: new PipelineProject(this, "SeonLambdaBuildProject", {
             environment: {
               buildImage: LinuxBuildImage.STANDARD_5_0,
             },
