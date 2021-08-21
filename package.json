@@ -1,6 +1,6 @@
 {
   "name": "seon-cdk-pipeline",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "bin": {
     "seon-cdk-pipeline": "bin/seon-cdk-pipeline.js"
   },
