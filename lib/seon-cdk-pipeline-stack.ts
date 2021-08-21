@@ -29,7 +29,7 @@ export class SeonCdkPipelineStack extends cdk.Stack {
         new GitHubSourceAction({
           owner: "SEON-GmbH",
           repo: "seon-cdk-pipeline",
-          branch: "master",
+          branch: "main",
           actionName: "PipelineSource",
           oauthToken: SecretValue.secretsManager("seon-github-token"),
           output: sourceOutput,
