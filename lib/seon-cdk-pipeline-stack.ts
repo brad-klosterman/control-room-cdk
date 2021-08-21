@@ -11,21 +11,26 @@ import {
   LinuxBuildImage,
   PipelineProject,
 } from "@aws-cdk/aws-codebuild";
+import { ServiceStack } from "./service-stack";
 
 export class SeonCdkPipelineStack extends cdk.Stack {
+  private readonly pipeline: Pipeline;
+  private readonly cdkBuildOutput: Artifact;
+  private readonly serviceBuildOutput: Artifact;
+
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const pipeline = new Pipeline(this, "Pipeline", {
+    this.pipeline = new Pipeline(this, "Pipeline", {
       pipelineName: "Pipeline",
       crossAccountKeys: false,
       restartExecutionOnUpdate: true,
     });
 
-    const CDK_SOURCE_OUTPUT = new Artifact("CDKSourceOutput");
-    const SEON_LAMBDA_SOURCE_OUTPUT = new Artifact("SeonLambdaSourceOutput");
+    const cdkSourceOutput = new Artifact("CDKSourceOutput");
+    const serviceSourceOutput = new Artifact("ServiceSourceOutput");
 
-    pipeline.addStage({
+    this.pipeline.addStage({
       stageName: "Source",
       actions: [
         new GitHubSourceAction({
@@ -34,29 +39,29 @@ export class SeonCdkPipelineStack extends cdk.Stack {
           branch: "main",
           actionName: "Pipeline_Source",
           oauthToken: SecretValue.secretsManager("seon-github-token"),
-          output: CDK_SOURCE_OUTPUT,
+          output: cdkSourceOutput,
         }),
         new GitHubSourceAction({
           owner: "SEON-GmbH",
           repo: "seon-lambda",
           branch: "main",
-          actionName: "Seon_Lambda_Source",
+          actionName: "Service_Source",
           oauthToken: SecretValue.secretsManager("seon-github-token"),
-          output: SEON_LAMBDA_SOURCE_OUTPUT,
+          output: serviceSourceOutput,
         }),
       ],
     });
 
-    const CDK_BUILD_OUTPUT = new Artifact("CdkBuildOutput");
-    const SEON_LAMBDA_BUILD_OUTPUT = new Artifact("SeonLambdaBuildOutput");
+    this.cdkBuildOutput = new Artifact("CdkBuildOutput");
+    this.serviceBuildOutput = new Artifact("ServiceBuildOutput");
 
-    pipeline.addStage({
+    this.pipeline.addStage({
       stageName: "Build",
       actions: [
         new CodeBuildAction({
           actionName: "CDK_Build",
-          input: CDK_SOURCE_OUTPUT,
-          outputs: [CDK_BUILD_OUTPUT],
+          input: cdkSourceOutput,
+          outputs: [this.cdkBuildOutput],
           project: new PipelineProject(this, "CdkBuildProject", {
             environment: {
               buildImage: LinuxBuildImage.STANDARD_5_0,
@@ -67,10 +72,10 @@ export class SeonCdkPipelineStack extends cdk.Stack {
           }),
         }),
         new CodeBuildAction({
-          actionName: "Seon_Lambda_Build",
-          input: SEON_LAMBDA_SOURCE_OUTPUT,
-          outputs: [SEON_LAMBDA_BUILD_OUTPUT],
-          project: new PipelineProject(this, "SeonLambdaBuildProject", {
+          actionName: "Service_Build",
+          input: serviceSourceOutput,
+          outputs: [this.serviceBuildOutput],
+          project: new PipelineProject(this, "ServiceBuildProject", {
             environment: {
               buildImage: LinuxBuildImage.STANDARD_5_0,
             },
@@ -82,16 +87,38 @@ export class SeonCdkPipelineStack extends cdk.Stack {
       ],
     });
 
-    pipeline.addStage({
+    this.pipeline.addStage({
       stageName: "Pipeline_Update",
       actions: [
         new CloudFormationCreateUpdateStackAction({
           actionName: "Pipeline_Update",
           stackName: "SeonCdkPipelineStack",
-          templatePath: CDK_BUILD_OUTPUT.atPath(
+          templatePath: this.cdkBuildOutput.atPath(
             "SeonCdkPipelineStack.template.json"
           ),
           adminPermissions: true,
+        }),
+      ],
+    });
+  }
+
+  public addServiceStage(serviceStack: ServiceStack, stageName: string) {
+    this.pipeline.addStage({
+      stageName: stageName,
+      actions: [
+        new CloudFormationCreateUpdateStackAction({
+          actionName: "Service_Update",
+          stackName: serviceStack.stackName,
+          templatePath: this.cdkBuildOutput.atPath(
+            `${serviceStack.stackName}.template.json`
+          ),
+          adminPermissions: true,
+          parameterOverrides: {
+            ...serviceStack.serviceCode.assign(
+              this.serviceBuildOutput.s3Location
+            ),
+          },
+          extraInputs: [this.serviceBuildOutput],
         }),
       ],
     });
