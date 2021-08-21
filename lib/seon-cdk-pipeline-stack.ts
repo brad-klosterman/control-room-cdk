@@ -27,7 +27,7 @@ export class SeonCdkPipelineStack extends cdk.Stack {
       stageName: "Source",
       actions: [
         new GitHubSourceAction({
-          owner: "bklosterman-seon",
+          owner: "SEON-GmbH",
           repo: "seon-cdk-pipeline",
           branch: "master",
           actionName: "PipelineSource",
