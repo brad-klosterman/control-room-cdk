@@ -3,7 +3,6 @@ import * as iam from "@aws-cdk/aws-iam";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as ecr from "@aws-cdk/aws-ecr";
-import * as codecommit from "@aws-cdk/aws-codecommit";
 import * as codebuild from "@aws-cdk/aws-codebuild";
 import * as codepipeline from "@aws-cdk/aws-codepipeline";
 import * as actions from "@aws-cdk/aws-codepipeline-actions";
@@ -17,7 +16,9 @@ export interface EcsCicdProps extends base.ConstructProps {
   service: ecs.IBaseService;
   appPath: string;
   containerName: string;
-  repo: codecommit.Repository;
+  owner: string;
+  repo: string;
+  branch: string;
   ecrRepo: ecr.Repository;
 }
 
@@ -26,17 +27,10 @@ export class EcsCicdConstrunct extends base.BaseConstruct {
     super(scope, id, props);
 
     const sourceOutput = new codepipeline.Artifact();
-    // const sourceAction = new actions.CodeCommitSourceAction({
-    //     actionName: 'CodeCommit_SourceMerge',
-    //     repository: props.repo,
-    //     output: sourceOutput,
-    //     branch: 'master'
-    // })
-
     const sourceAction = new actions.GitHubSourceAction({
-      owner: "SEON-GmbH",
-      repo: "seon-federation-gateway",
-      branch: "main",
+      owner: props.owner,
+      repo: props.repo,
+      branch: props.branch,
       actionName: "CodeCommit_SourceMerge",
       oauthToken: cdk.SecretValue.secretsManager("seon-github-token"),
       output: sourceOutput,
@@ -113,7 +107,7 @@ export class EcsCicdConstrunct extends base.BaseConstruct {
           value: `${props.appPath}`,
         },
         BACK_PATH: {
-          value: "../..",
+          value: ".",
         },
       },
       buildSpec: codebuild.BuildSpec.fromObject({

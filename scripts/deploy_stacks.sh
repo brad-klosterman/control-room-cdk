@@ -27,10 +27,10 @@ echo .
 echo ==--------DeployStacksStepByStep---------==
 if [ -z "$PROFILE_NAME" ]; then
     cdk deploy *-VpcInfraStack --require-approval never
-    cdk deploy *-SeonGatewayStack --require-approval never
+    cdk deploy *-GatewayStack --require-approval never
 else
     cdk deploy *-VpcInfraStack --require-approval never --profile $PROFILE_NAME
-    cdk deploy *-SeonGatewayStack --require-approval never --profile $PROFILE_NAME
+    cdk deploy *-GatewayStack --require-approval never --profile $PROFILE_NAME
 fi
 echo .
 echo .

@@ -55,7 +55,9 @@ export class EcsAlbServiceStack extends base.BaseStack {
             service: infra.service,
             containerName: infra.containerName,
             appPath: this.stackConfig.AppPath,
-            repo: repo.gitRepo,
+            owner: this.stackConfig.owner,
+            repo: this.stackConfig.repo,
+            branch: this.stackConfig.branch,
             ecrRepo: repo.ecrRepo
         });
 
