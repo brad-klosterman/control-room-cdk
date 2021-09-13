@@ -16,9 +16,11 @@ export interface EcsCicdProps extends base.ConstructProps {
   service: ecs.IBaseService;
   appPath: string;
   containerName: string;
-  owner: string;
-  repo: string;
-  branch: string;
+  repo: {
+    name: string;
+    owner: string;
+    branch: string;
+  };
   ecrRepo: ecr.Repository;
 }
 
@@ -28,10 +30,10 @@ export class EcsCicdConstrunct extends base.BaseConstruct {
 
     const sourceOutput = new codepipeline.Artifact();
     const sourceAction = new actions.GitHubSourceAction({
-      owner: props.owner,
-      repo: props.repo,
-      branch: props.branch,
-      actionName: "CodeCommit_SourceMerge",
+      owner: props.repo.owner,
+      repo: props.repo.name,
+      branch: props.repo.branch,
+      actionName: "GitCommit_SourceMerge",
       oauthToken: cdk.SecretValue.secretsManager("seon-github-token"),
       output: sourceOutput,
     });
