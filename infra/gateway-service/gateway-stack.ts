@@ -25,30 +25,19 @@ export const createStack = (
   domainProperties: IDomainProperties,
   tags: ITag[],
   props: cdk.StackProps,
-  vpc?: ec2.Vpc
+  vpc: ec2.IVpc,
+  cluster: ecs.Cluster
 ) => {
   const stack = new cdk.Stack(scope, stackName, props);
 
   tags.forEach((tag) => cdk.Tags.of(stack).add(tag.name, tag.value));
 
-  // certificate
   const certificate = acm.Certificate.fromCertificateArn(
     stack,
     `${stackName}Certificate`,
     domainProperties.domainCertificateArn
   );
 
-  // NOTE: Limit AZs to avoid reaching resource quotas
-  const vpcInUse = vpc
-    ? vpc
-    : new ec2.Vpc(stack, `${stackName}Vpc`, { maxAzs: 2 });
-
-  // BK maybe use global cluster with other microservices
-  const cluster = new ecs.Cluster(stack, `${stackName}Cluster`, {
-    vpc: vpcInUse,
-  });
-
-  // Source container images
   const sourcedContainers = sourceContainerImages(stack, containerProperties);
 
   const { loadBalancer, services } = configureClusterAndServices(

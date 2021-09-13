@@ -21,7 +21,7 @@ const configureTaskDefinition = (
     .addContainer(`${id}Container`, {
       image:
         containerProperties.image,
-      // memoryLimitMiB: 256,
+      memoryLimitMiB: 256,
       environment: containerProperties.environment,
       logging: new ecs.AwsLogDriver({ streamPrefix: `${id}` }),
     })

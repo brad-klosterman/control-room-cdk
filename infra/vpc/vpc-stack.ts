@@ -1,59 +1,81 @@
 import * as cdk from "@aws-cdk/core";
-import * as ec2 from "@aws-cdk/aws-ec2";
-import * as ecs from "@aws-cdk/aws-ecs";
-import * as acm from "@aws-cdk/aws-certificatemanager";
-import * as route53 from "@aws-cdk/aws-route53";
 
-import configureCloudMap from "./constructs/configureCloudMap";
+import configureVPC from "./constructs/configureVPC";
 import configureECSCluster from "./constructs/configureECSCluster";
+import configureCloudMap from "./constructs/configureCloudMap";
+import putParameter from "./constructs/putParameter";
 
-const configureVPC = (
-  baseName: string,
-  vpcMaxAzs: number,
-  vpcCidr: string,
-  natGateways: number
-): ec2.IVpc => {
-  if (vpcMaxAzs > 0 && vpcCidr.length > 0) {
-    const vpc = new ec2.Vpc(this, baseName, {
-      maxAzs: vpcMaxAzs,
-      cidr: vpcCidr,
-      natGateways: natGateways,
-    });
-    return vpc;
-  } else {
-    console.error("please check the options: VPCMaxAzs, VPCCIDR, NATGateway");
-    process.exit(1);
-  }
-};
+import { IVPCProperties } from "./interfaces";
 
 /** Constructs the stack with given properties.
- * @param scope               The CDK app
- * @param stackName           The application identifier
+ * @param scope                 The CDK app
+ * @param appName               The application identifier
+ * @param stackName             The stack identifier
+ * @param clusterName           The cluster identifier
+ * @param props                 The CDK stack properties
+ * @param vpcProperties         IVPCProperties
  */
-export const createVPC = (scope: cdk.App, stackName: string) => {
-  const stack = new cdk.Stack(scope, stackName, props);
+export const createVPC = ({
+  scope,
+  appName,
+  clusterName,
+  props,
+  vpcProperties,
+}: {
+  scope: cdk.App;
+  appName: string;
+  clusterName: string;
+  props: cdk.StackProps;
+  vpcProperties: IVPCProperties;
+}) => {
+  const stack = new cdk.Stack(scope, vpcProperties.vpcName, props);
 
-  const vpc = this.createVpc(
-    this.stackConfig.VPCName,
-    this.stackConfig.VPCMaxAzs,
-    this.stackConfig.VPCCIDR,
-    this.stackConfig.NATGatewayCount
-  );
-  this.putParameter(
-    "VPCName",
-    `${this.projectPrefix}/${this.stackConfig.VPCName}`
-  );
+  const vpc = configureVPC({
+    stack,
+    ...vpcProperties,
+  });
 
-  const ecsCluster = this.createEcsCluster(
-    this.stackConfig.ECSClusterName,
-    vpc
-  );
-  this.putParameter("ECSClusterName", ecsCluster.clusterName);
+  putParameter({
+    stack,
+    paramKey: appName + "_VPCName",
+    paramValue: vpcProperties.vpcName,
+  });
 
-  const cloudMapNamespacce = this.createCloudMapNamespace(ecsCluster);
-  this.putParameter("CloudMapNamespaceName", cloudMapNamespacce.namespaceName);
-  this.putParameter("CloudMapNamespaceArn", cloudMapNamespacce.namespaceArn);
-  this.putParameter("CloudMapNamespaceId", cloudMapNamespacce.namespaceId);
+  const cluster = configureECSCluster({ vpc, stack, clusterName });
 
-  return stack;
+  putParameter({
+    stack,
+    paramKey: appName + "_ECSClusterName",
+    paramValue: cluster.clusterName,
+  });
+
+  const cloudMapNamespace = configureCloudMap({
+    cluster,
+    nameSpace: appName + "NameSpace",
+  });
+
+  putParameter({
+    stack,
+    paramKey: appName + "_CloudMapNamespaceName",
+    paramValue: cloudMapNamespace.namespaceName,
+  });
+
+  putParameter({
+    stack,
+    paramKey: appName + "_CloudMapNamespaceArn",
+    paramValue: cloudMapNamespace.namespaceArn,
+  });
+  putParameter({
+    stack,
+    paramKey: appName + "_CloudMapNamespaceId",
+    paramValue: cloudMapNamespace.namespaceId,
+  });
+
+  return {
+    vpc,
+    cluster,
+    cloudMapNamespace,
+  };
 };
+
+export default createVPC;

@@ -53,17 +53,17 @@ const configureClusterAndServices = (
       newTargetGroupId: `${containerProperties[i].id}TargetGroup`,
       listener: ecs.ListenerConfig.applicationListener(listener, {
         protocol: loadBalancerV2.ApplicationProtocol.HTTP,
-        priority: 10 + i * 10,
-        conditions: containerProperties[i].conditions,
+        // priority: 10 + i * 10,
+        // conditions: containerProperties[i].conditions,
       }),
     })
   );
 
-  listener.addAction(`${stackName}FixedResponse`, {
-    action: loadBalancerV2.ListenerAction.fixedResponse(404, {
-      messageBody: "Not Found",
-    }),
-  });
+  // listener.addAction(`${stackName}FixedResponse`, {
+  //   action: loadBalancerV2.ListenerAction.fixedResponse(404, {
+  //     messageBody: "Not Found",
+  //   }),
+  // });
   return { loadBalancer, services };
 };
 

@@ -3,6 +3,7 @@ import "source-map-support/register";
 
 import * as cdk from "@aws-cdk/core";
 import { createStack } from "./gateway-service/gateway-stack";
+import createVPC from "./vpc/vpc-stack";
 
 import {
   dockerProperties as dockerPropertiesDev,
@@ -13,17 +14,33 @@ import {
   stackTags as stackTagsProd,
 } from "./gateway-service/config/config-prod";
 
-// Name of app and prefix for all created resources
 const appName = "SEONGateway";
-const app = new cdk.App();
-
-// Define region and acconunt for the stack
 const stackProperties = {
   env: {
     region: "eu-central-1",
     account: "894556524073",
   },
 };
+
+const app = new cdk.App();
+
+const environment = app.node.tryGetContext("environment");
+if (environment === undefined) {
+  throw new Error("Environment must be given");
+}
+
+const { vpc, cluster, cloudMapNamespace } = createVPC({
+  scope: app,
+  appName,
+  clusterName: "GatewayCluster",
+  props: stackProperties,
+  vpcProperties: {
+    vpcName: "GatewayVPC",
+    vpcMaxAzs: 3,
+    vpcCidr: "10.0.0.0/16",
+    natGateways: 1,
+  },
+});
 
 // Use predefined hosted zone and a domain certificate
 const getDnsProperties = (
@@ -36,12 +53,6 @@ const getDnsProperties = (
   domainCertificateArn: `arn:aws:acm:${stackProperties.env.region}:${stackProperties.env.account}:certificate/${certificateIdentifier}`,
 });
 
-
-const environment = app.node.tryGetContext("environment");
-if (environment === undefined) {
-  throw new Error("Environment must be given");
-}
-
 const dnsProperties = getDnsProperties(
   app.node.tryGetContext("certificateIdentifier"),
   app.node.tryGetContext("domainName"),
@@ -53,7 +64,7 @@ const stackName = `${appName}-${environment}`;
 // IContainerProperties
 const dockerProperties =
   environment === "dev" ? dockerPropertiesDev : dockerPropertiesProd;
-  
+
 // ITag stack tags
 const stackTags = environment === "dev" ? stackTagsDev : stackTagsProd;
 
@@ -64,6 +75,9 @@ createStack(
   dockerProperties,
   dnsProperties,
   stackTags,
-  stackProperties
+  stackProperties,
+  vpc,
+  cluster
 );
+
 app.synth();

@@ -57,7 +57,7 @@ const configurePipeline = ({
         service: services[0],
         imageFile: new codepipeline.ArtifactPath(
           buildOutput,
-          `${container.id}Container`
+          `imagedefinitions.json`
         ),
         deploymentTimeout: cdk.Duration.minutes(60),
       });

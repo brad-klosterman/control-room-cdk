@@ -35,7 +35,7 @@ const configureBuild = ({
         value: `${container.ecrRepo.repositoryUri}`,
       },
       CONTAINER_NAME: {
-        value: `${container.id}`,
+        value: `${container.id}Container`,
       },
       APP_PATH: {
         value: ".",
