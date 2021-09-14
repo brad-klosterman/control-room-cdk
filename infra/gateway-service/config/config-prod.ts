@@ -6,7 +6,7 @@ export const dockerProperties: IContainerProperties[] = [
     id: "gateway-server",
     repo: "seon-federation-gateway",
     containerPort: 4000,
-    conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/apollo*"])],
+    conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
     environment: { APP_ENVIRONMENT: `production` },
   },
 ];

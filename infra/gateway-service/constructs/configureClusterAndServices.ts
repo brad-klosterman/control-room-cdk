@@ -1,11 +1,20 @@
 import * as cdk from "@aws-cdk/core";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as acm from "@aws-cdk/aws-certificatemanager";
+import * as ec2 from "@aws-cdk/aws-ec2";
 import * as loadBalancerV2 from "@aws-cdk/aws-elasticloadbalancingv2";
 
 import configureTaskDefinition from "./configureTaskDefinition";
 import createHttpsRedirect from "./createHttpsRedirect";
 import { ITag, ISourcedContainer } from "../interfaces";
+
+/** A task definition is required to run Docker containers in Amazon ECS.
+
+ * Fargate, you no longer have to provision, configure, or scale clusters of virtual machines to run containers.
+ * @param stack                 The CDK stack
+ * @param containerProperties   The container parameters
+ * @param tags                  The tags to apply
+ */
 
 const configureClusterAndServices = (
   stackName: string,
@@ -19,28 +28,29 @@ const configureClusterAndServices = (
     (container) =>
       new ecs.FargateService(stack, `${container.id}FargateService`, {
         cluster,
-        taskDefinition: configureTaskDefinition(
-          `${container.id}`,
+        assignPublicIp: true, // BK
+        taskDefinition: configureTaskDefinition({
           stack,
-          container,
-          tags
-        ),
+          containerProperties: container,
+          tags,
+        }),
       })
   );
 
   const loadBalancer = new loadBalancerV2.ApplicationLoadBalancer(
     stack,
-    `${stackName}LoadBalancer`,
+    `LoadBalancer`,
     {
       vpc: cluster.vpc,
       internetFacing: true,
     }
   );
-  
+
   createHttpsRedirect(stackName, stack, loadBalancer);
 
-  const listener = loadBalancer.addListener(`${stackName}HttpsListener`, {
+  const listener = loadBalancer.addListener(`HttpsListener`, {
     port: 443,
+    open: true,
     certificates: [
       loadBalancerV2.ListenerCertificate.fromArn(certificate.certificateArn),
     ],
@@ -53,17 +63,18 @@ const configureClusterAndServices = (
       newTargetGroupId: `${containerProperties[i].id}TargetGroup`,
       listener: ecs.ListenerConfig.applicationListener(listener, {
         protocol: loadBalancerV2.ApplicationProtocol.HTTP,
-        // priority: 10 + i * 10,
-        // conditions: containerProperties[i].conditions,
+        priority: 10 + i * 10,
+        conditions: containerProperties[i].conditions,
       }),
     })
   );
 
-  // listener.addAction(`${stackName}FixedResponse`, {
-  //   action: loadBalancerV2.ListenerAction.fixedResponse(404, {
-  //     messageBody: "Not Found",
-  //   }),
-  // });
+  listener.addAction(`FixedResponse`, {
+    action: loadBalancerV2.ListenerAction.fixedResponse(404, {
+      messageBody: "SEON GATEWAY DEFAULT GROUP",
+    }),
+  });
+
   return { loadBalancer, services };
 };
 

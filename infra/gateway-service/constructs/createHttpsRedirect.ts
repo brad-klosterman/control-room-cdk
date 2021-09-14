@@ -10,6 +10,7 @@ const createHttpsRedirect = (
 ) => {
   const port = 80;
   loadBalancer.connections.allowFromAnyIpv4(ec2.Port.tcp(port));
+  
   const actionProperty: loadBalancerV2.CfnListener.ActionProperty = {
     type: "redirect",
     redirectConfig: {
@@ -18,12 +19,14 @@ const createHttpsRedirect = (
       port: "443",
     },
   };
+  
   const redirectProps: loadBalancerV2.CfnListenerProps = {
     defaultActions: [actionProperty],
     loadBalancerArn: loadBalancer.loadBalancerArn,
     port,
     protocol: "HTTP",
   };
+  
   return new loadBalancerV2.CfnListener(
     scope,
     `${stackName}HttpRedirect`,

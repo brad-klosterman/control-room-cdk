@@ -14,14 +14,6 @@ import {
   stackTags as stackTagsProd,
 } from "./gateway-service/config/config-prod";
 
-const appName = "SEONGateway";
-const stackProperties = {
-  env: {
-    region: "eu-central-1",
-    account: "894556524073",
-  },
-};
-
 const app = new cdk.App();
 
 const environment = app.node.tryGetContext("environment");
@@ -29,13 +21,21 @@ if (environment === undefined) {
   throw new Error("Environment must be given");
 }
 
+const appName = "SEON" + "-" + environment + "-";
+const stackProperties = {
+  env: {
+    region: "eu-central-1",
+    account: "894556524073",
+  },
+};
+
 const { vpc, cluster, cloudMapNamespace } = createVPC({
   scope: app,
-  appName,
-  clusterName: "GatewayCluster",
+  cloudName: appName + "CloudSpace",
+  clusterName: appName + "Cluster",
   props: stackProperties,
   vpcProperties: {
-    vpcName: "GatewayVPC",
+    vpcName: appName + "VPC",
     vpcMaxAzs: 3,
     vpcCidr: "10.0.0.0/16",
     natGateways: 1,
@@ -59,7 +59,7 @@ const dnsProperties = getDnsProperties(
   app.node.tryGetContext("subdomainName")
 );
 
-const stackName = `${appName}-${environment}`;
+const stackName = appName + "Gateway";
 
 // IContainerProperties
 const dockerProperties =

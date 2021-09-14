@@ -17,18 +17,18 @@ import { IVPCProperties } from "./interfaces";
  */
 export const createVPC = ({
   scope,
-  appName,
+  cloudName,
   clusterName,
   props,
   vpcProperties,
 }: {
   scope: cdk.App;
-  appName: string;
+  cloudName: string;
   clusterName: string;
   props: cdk.StackProps;
   vpcProperties: IVPCProperties;
 }) => {
-  const stack = new cdk.Stack(scope, vpcProperties.vpcName, props);
+  const stack = new cdk.Stack(scope, vpcProperties.vpcName + "STACK", props);
 
   const vpc = configureVPC({
     stack,
@@ -37,7 +37,7 @@ export const createVPC = ({
 
   putParameter({
     stack,
-    paramKey: appName + "_VPCName",
+    paramKey: vpcProperties.vpcName + "NAME",
     paramValue: vpcProperties.vpcName,
   });
 
@@ -45,29 +45,29 @@ export const createVPC = ({
 
   putParameter({
     stack,
-    paramKey: appName + "_ECSClusterName",
+    paramKey: clusterName + "NAME",
     paramValue: cluster.clusterName,
   });
 
   const cloudMapNamespace = configureCloudMap({
     cluster,
-    nameSpace: appName + "NameSpace",
+    nameSpace: cloudName,
   });
 
   putParameter({
     stack,
-    paramKey: appName + "_CloudMapNamespaceName",
+    paramKey: cloudName + "NS",
     paramValue: cloudMapNamespace.namespaceName,
   });
 
   putParameter({
     stack,
-    paramKey: appName + "_CloudMapNamespaceArn",
+    paramKey: cloudName + "ARN",
     paramValue: cloudMapNamespace.namespaceArn,
   });
   putParameter({
     stack,
-    paramKey: appName + "_CloudMapNamespaceId",
+    paramKey: cloudName + "ID",
     paramValue: cloudMapNamespace.namespaceId,
   });
 

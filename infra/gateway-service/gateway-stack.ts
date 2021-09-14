@@ -3,6 +3,7 @@ import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as acm from "@aws-cdk/aws-certificatemanager";
 import * as route53 from "@aws-cdk/aws-route53";
+import * as route53targets from "@aws-cdk/aws-route53-targets";
 
 import configureClusterAndServices from "./constructs/configureClusterAndServices";
 import sourceContainerImages from "./constructs/sourceContainerImages";
@@ -34,7 +35,7 @@ export const createStack = (
 
   const certificate = acm.Certificate.fromCertificateArn(
     stack,
-    `${stackName}Certificate`,
+    stackName + "Certificate",
     domainProperties.domainCertificateArn
   );
 
@@ -57,23 +58,29 @@ export const createStack = (
     sourcedContainers,
   });
 
-  // Configure Pipeline
-
-  const zone = route53.HostedZone.fromLookup(stack, `${stackName}Zone`, {
+  const zone = route53.HostedZone.fromLookup(stack, stackName + "ZONE", {
     domainName: domainProperties.domainName,
   });
 
-  new route53.CnameRecord(stack, `${stackName}Site`, {
-    zone,
-    recordName: domainProperties.subdomainName,
-    domainName: loadBalancer.loadBalancerDnsName,
-  });
+  new route53.ARecord(
+    stack,
+    `${domainProperties.subdomainName}.${domainProperties.domainName}ALIAS_RECORD`,
+    {
+      recordName: domainProperties.subdomainName,
+      target: route53.RecordTarget.fromAlias(
+        new route53targets.LoadBalancerTarget(loadBalancer)
+      ),
+      ttl: cdk.Duration.seconds(60),
+      comment: domainProperties.subdomainName + "API domain",
+      zone: zone,
+    }
+  );
 
   // Output the DNS name where you can access your service
-  new cdk.CfnOutput(stack, `${stackName}DNS`, {
+  new cdk.CfnOutput(stack, stackName + "ALB-DNS", {
     value: loadBalancer.loadBalancerDnsName,
   });
-  new cdk.CfnOutput(stack, `SiteDNS`, {
+  new cdk.CfnOutput(stack, stackName + "DNS", {
     value: `${domainProperties.subdomainName}.${domainProperties.domainName}`,
   });
   return stack;
