@@ -9,7 +9,6 @@ import createHttpsRedirect from "./createHttpsRedirect";
 import { ITag, ISourcedContainer } from "../interfaces";
 
 /** A task definition is required to run Docker containers in Amazon ECS.
-
  * Fargate, you no longer have to provision, configure, or scale clusters of virtual machines to run containers.
  * @param stack                 The CDK stack
  * @param containerProperties   The container parameters

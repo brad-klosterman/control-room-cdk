@@ -26,8 +26,6 @@ export interface IContainerProperties {
 }
 
 export interface ISourcedContainer extends IContainerProperties {
-  // Sourced image
-  image: ecs.ContainerImage;
   // ECR Repo
   ecrRepo: ecr.IRepository;
 }

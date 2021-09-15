@@ -11,7 +11,7 @@ const sourceContainerImages = (
   const sourcedContainers = containerProperties.map((container) => {
     let image: ecs.ContainerImage;
     let ecrRepo: ecr.IRepository;
-    const repositoryName = (container.id + "ecr-repo").toLowerCase();
+    const repositoryName = (container.id + "-ecr-repo").toLowerCase();
 
     const existingRepo: ecr.IRepository = ecr.Repository.fromRepositoryName(
       stack,
@@ -21,13 +21,12 @@ const sourceContainerImages = (
 
     if (existingRepo) {
       ecrRepo = existingRepo;
-      image = ecs.ContainerImage.fromEcrRepository(existingRepo);
+      // image = ecs.ContainerImage.fromEcrRepository(existingRepo);
     } else {
       ecrRepo = new ecr.Repository(stack, repositoryName, {
         repositoryName: repositoryName,
       });
-
-      image = ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample");
+      // image = ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample");
     }
 
     new cdk.CfnOutput(stack, container.id + "ECRName", {
@@ -36,7 +35,6 @@ const sourceContainerImages = (
 
     return {
       ...container,
-      image,
       ecrRepo,
     };
   });

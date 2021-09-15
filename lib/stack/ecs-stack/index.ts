@@ -72,27 +72,26 @@ const createECSStack = ({
     domainName: dns.domainName,
   });
 
-  new route53.ARecord(
-    stack,
-    `${dns.subdomainName}.${dns.domainName}ALIAS_RECORD`,
-    {
-      recordName: dns.subdomainName,
-      target: route53.RecordTarget.fromAlias(
-        new route53targets.LoadBalancerTarget(loadBalancer)
-      ),
-      ttl: cdk.Duration.seconds(60),
-      comment: dns.subdomainName + "API domain",
-      zone: zone,
-    }
-  );
+  const URL = `${dns.subdomainName}.${dns.domainName}`;
+
+  new route53.ARecord(stack, `${URL}ALIAS_RECORD`, {
+    recordName: dns.subdomainName,
+    target: route53.RecordTarget.fromAlias(
+      new route53targets.LoadBalancerTarget(loadBalancer)
+    ),
+    ttl: cdk.Duration.seconds(60),
+    comment: dns.subdomainName + "API DOMAIN",
+    zone: zone,
+  });
 
   // Output the DNS name where you can access your service
   new cdk.CfnOutput(stack, stackName + "ALB-DNS", {
     value: loadBalancer.loadBalancerDnsName,
   });
-  new cdk.CfnOutput(stack, stackName + "DNS", {
-    value: `${dns.subdomainName}.${dns.domainName}`,
+  new cdk.CfnOutput(stack, stackName + "PUBLIC-DNS", {
+    value: `${URL}`,
   });
+
   return stack;
 };
 

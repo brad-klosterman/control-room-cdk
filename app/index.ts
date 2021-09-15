@@ -5,7 +5,7 @@ import createVPC from "../lib/stack/vpc-stack";
 import createECSStack from "../lib/stack/ecs-stack";
 import createCache from "../lib/stack/cache-stack";
 
-import { APP, GATEWAY_STACK } from "./config";
+import { APP, GATEWAY_STACK, AGENTS_STACK } from "./config";
 
 // Construct VPCStack
 const { vpc, cluster, cloudMapNamespace } = createVPC({
@@ -30,12 +30,15 @@ createCache({
   cacheName: APP.name + "CACHE",
   cacheProperties: {
     replicationGroupDescription: APP.name + "REDIS_REP_GROUP",
-    atRestEncryptionEnabled: true,
-    multiAzEnabled: true,
+    // atRestEncryptionEnabled: true,
+    // multiAzEnabled: true,
     cacheNodeType: "cache.m6g.large",
     engine: "Redis",
     engineVersion: "6.x",
+    // numCacheClusters: 1,
     numNodeGroups: 1,
+    replicasPerNodeGroup: 1,
+    // primaryClusterId: cluster.clusterName,
   },
 });
 
@@ -49,6 +52,18 @@ createECSStack({
   containers: GATEWAY_STACK.containers,
   dns: GATEWAY_STACK.dns,
   tags: GATEWAY_STACK.tags,
+});
+
+// Construct AGENTS_STACKGateway 
+createECSStack({
+  scope: APP.cdk,
+  props: APP.props,
+  vpc,
+  cluster,
+  stackName: AGENTS_STACK.name,
+  containers: AGENTS_STACK.containers,
+  dns: AGENTS_STACK.dns,
+  tags: AGENTS_STACK.tags,
 });
 
 APP.cdk.synth();

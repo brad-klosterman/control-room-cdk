@@ -29,37 +29,55 @@ export const createCache = ({
     stack,
     cacheName + "SUBNET_GROUP",
     {
-      cacheSubnetGroupName: cacheName + "SubNetGroup",
+      cacheSubnetGroupName: cacheName + "SNGroup",
       description: cacheName + " Elasticache Subnet Group",
-      subnetIds: vpc.privateSubnets.map(({ subnetId }) => subnetId),
+      subnetIds: vpc.privateSubnets.map(function (subnet) {
+        return subnet.subnetId;
+      }),
     }
   );
 
-  // const securityGroup =  new ec2.SecurityGroup(stack, cacheName + 'SG', {
-  //   vpc: vpc,
-  //   description: 'SecurityGroup associated with the ElastiCache Redis Cluster',
-  //   // allowAllOutbound: false,
-  // });
+  const securityGroup = new ec2.SecurityGroup(stack, cacheName + "SG", {
+    vpc: vpc,
+    description: "SecurityGroup associated with the ElastiCache Redis Cluster",
+    // allowAllOutbound: false,
+  });
 
-  const redis = configureRedis({
+  // securityGroup.connections.allowFrom(scope, ec2.Port.tcp(6379), 'Redis ingress 6379');
+  // securityGroup.connections.allowTo(lambdaSecurityGroup, ec2.Port.tcp(6379), 'Redis egress 6379');
+
+  new ec2.Connections({
+    securityGroups: [securityGroup],
+    defaultPort: new ec2.Port({
+      protocol: ec2.Protocol.TCP,
+      fromPort: 6379,
+      toPort: 6379,
+      stringRepresentation: "ec-sg-connection",
+    }),
+  });
+
+  const redis = configureRedis({    
     stack,
     cacheName,
     cacheProperties: {
       ...cacheProperties,
       cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName,
-      // securityGroupIds: [securityGroup.securityGroupId],
+      securityGroupIds: [securityGroup.securityGroupId],
     },
   });
 
-  const redisUrl =
-    "redis://" +
-    redis.attrReadEndPointAddresses +
-    ":" +
-    redis.attrReadEndPointPorts;
+  redis.node.addDependency(subnetGroup)
+  // redis.addDependsOn(subnetGroup);
 
-  new cdk.CfnOutput(stack, cacheName + "REDIS", {
-    value: redisUrl,
-  });
+  // const redisUrl =
+  //   "redis://" +
+  //   redis.attrReadEndPointAddresses +
+  //   ":" +
+  //   redis.attrReadEndPointPorts;
+
+  // new cdk.CfnOutput(stack, cacheName + "REDIS", {
+  //   value: redisUrl,
+  // });
 
   return {
     redis,
