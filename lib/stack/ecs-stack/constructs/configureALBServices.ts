@@ -16,23 +16,23 @@ import { ITag, ISourcedContainer } from "../interfaces";
  * @param tags                  The tags to apply
  */
 
-const configureClusterAndServices = (
+const configureALBServices = (
   stackName: string,
   stack: cdk.Stack,
   cluster: ecs.Cluster,
   certificate: acm.ICertificate,
   containerProperties: ISourcedContainer[],
-  tags: ITag[]
+  tags?: ITag[]
 ) => {
   const services = containerProperties.map(
     (container) =>
       new ecs.FargateService(stack, `${container.id}FargateService`, {
         cluster,
-        assignPublicIp: true, // BK
+        // assignPublicIp: true,
         taskDefinition: configureTaskDefinition({
           stack,
           containerProperties: container,
-          tags,
+          tags: tags,
         }),
       })
   );
@@ -78,4 +78,4 @@ const configureClusterAndServices = (
   return { loadBalancer, services };
 };
 
-export default configureClusterAndServices;
+export default configureALBServices;

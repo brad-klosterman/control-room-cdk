@@ -4,10 +4,6 @@ import * as ecr from "@aws-cdk/aws-ecr";
 import * as codepipeline from "@aws-cdk/aws-codepipeline";
 
 // Structure for tagging objects created
-export interface ITag {
-  name: string;
-  value: string;
-}
 
 export interface IDomainProperties {
   domainName: string;
@@ -36,8 +32,26 @@ export interface ISourcedContainer extends IContainerProperties {
   ecrRepo: ecr.IRepository;
 }
 
+export interface ITag {
+  name: string;
+  value: string;
+}
+
 export interface IPipelineActions {
   source: codepipeline.IAction[];
   build: codepipeline.IAction[];
   deploy: codepipeline.IAction[];
+}
+
+export interface IDNS {
+  domainName: string;
+  subdomainName: string;
+  domainCertificateArn: string;
+}
+
+export interface IECStack {
+  name: string;
+  containers: IContainerProperties[];
+  dns: IDNS;
+  tags?: ITag[];
 }

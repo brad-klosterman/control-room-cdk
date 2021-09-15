@@ -2,6 +2,8 @@ import * as cdk from "@aws-cdk/core";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
 
+import putParameter from "./putParameter";
+
 const configureECSCluster = ({
   vpc,
   stack,
@@ -15,6 +17,12 @@ const configureECSCluster = ({
     clusterName: clusterName,
     vpc: vpc,
     containerInsights: true,
+  });
+
+  putParameter({
+    stack,
+    paramKey: clusterName + "CLUSTER_NAME",
+    paramValue: cluster.clusterName,
   });
 
   return cluster;

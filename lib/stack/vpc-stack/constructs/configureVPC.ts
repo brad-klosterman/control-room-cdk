@@ -18,6 +18,11 @@ const configureVPC = ({
       cidr: vpcCidr,
       natGateways: natGateways,
     });
+
+    const flowLog = new ec2.FlowLog(stack, vpcName + "FLOW_LOG", {
+      resourceType: ec2.FlowLogResourceType.fromVpc(vpc),
+    });
+
     return vpc;
   } else {
     console.error("please check the options: VPCMaxAzs, VPCCIDR, NATGateway");

@@ -2,7 +2,7 @@ import * as base from "../../lib/template/stack/base/base-stack";
 import { AppContext } from "../../lib/template/app-context";
 
 import { EcsRepoConstrunct } from "./construct/ecs-repo-const";
-import { EcsInfraConstrunct } from "./construct/ecs-infra-const5";
+import { EcsInfraConstrunct } from "./construct/ecs-infra-const";
 import { EcsCicdConstrunct } from "./construct/ecs-cicd-const";
 import { EcsAlbMonitorConstrunct } from "./construct/ecs-monitor-const";
 

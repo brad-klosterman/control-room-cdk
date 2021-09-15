@@ -9,23 +9,23 @@ import { IVPCProperties } from "./interfaces";
 
 /** Constructs the stack with given properties.
  * @param scope                 The CDK app
+ * @param props                 The CDK stack properties
  * @param appName               The application identifier
  * @param stackName             The stack identifier
  * @param clusterName           The cluster identifier
- * @param props                 The CDK stack properties
  * @param vpcProperties         IVPCProperties
  */
 export const createVPC = ({
   scope,
+  props,
   cloudName,
   clusterName,
-  props,
   vpcProperties,
 }: {
   scope: cdk.App;
+  props: cdk.StackProps;
   cloudName: string;
   clusterName: string;
-  props: cdk.StackProps;
   vpcProperties: IVPCProperties;
 }) => {
   const stack = new cdk.Stack(scope, vpcProperties.vpcName + "STACK", props);
@@ -35,23 +35,17 @@ export const createVPC = ({
     ...vpcProperties,
   });
 
-  putParameter({
-    stack,
-    paramKey: vpcProperties.vpcName + "NAME",
-    paramValue: vpcProperties.vpcName,
-  });
-
   const cluster = configureECSCluster({ vpc, stack, clusterName });
-
-  putParameter({
-    stack,
-    paramKey: clusterName + "NAME",
-    paramValue: cluster.clusterName,
-  });
 
   const cloudMapNamespace = configureCloudMap({
     cluster,
     nameSpace: cloudName,
+  });
+
+  putParameter({
+    stack,
+    paramKey: vpcProperties.vpcName + "NAME",
+    paramValue: vpcProperties.vpcName,
   });
 
   putParameter({

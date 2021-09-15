@@ -5,43 +5,53 @@ import * as acm from "@aws-cdk/aws-certificatemanager";
 import * as route53 from "@aws-cdk/aws-route53";
 import * as route53targets from "@aws-cdk/aws-route53-targets";
 
-import configureClusterAndServices from "./constructs/configureClusterAndServices";
+import configureALBServices from "./constructs/configureALBServices";
 import sourceContainerImages from "./constructs/sourceContainerImages";
 import configurePipeline from "./constructs/configurePipeline";
 import { ITag, IDomainProperties, IContainerProperties } from "./interfaces";
 
 /** Constructs the stack with given properties.
- * @param scope               The CDK app
- * @param stackName           The application identifier
- * @param containerProperties Defines the tasks to run
- * @param domainProperties    Define the domain to be registered with Route 53
- * @param tags                The tags to apply to created services
- * @param props               The CDK stack properties
- * @param vpc                 The VPC to use. Leave as undefined if using a stack created VPC.
+ * @param scope                 The CDK app
+ * @param props                 The CDK stack properties
+ * @param vpc                   The VPC to use. Leave as undefined if using a stack created VPC.
+ * @param stackName             The Stack identifier
+ * @param containers            Defines the tasks to run
+ * @param dns                   Define the domain to be registered with Route 53
+ * @param tags                  The tags to apply to created services
  */
-export const createStack = (
-  scope: cdk.App,
-  stackName: string,
-  containerProperties: IContainerProperties[],
-  domainProperties: IDomainProperties,
-  tags: ITag[],
-  props: cdk.StackProps,
-  vpc: ec2.IVpc,
-  cluster: ecs.Cluster
-) => {
+
+const createECSStack = ({
+  scope,
+  props,
+  vpc,
+  cluster,
+  stackName,
+  containers,
+  dns,
+  tags,
+}: {
+  scope: cdk.App;
+  props: cdk.StackProps;
+  vpc: ec2.IVpc;
+  cluster: ecs.Cluster;
+  stackName: string;
+  containers: IContainerProperties[];
+  dns: IDomainProperties;
+  tags?: ITag[];
+}) => {
   const stack = new cdk.Stack(scope, stackName, props);
 
-  tags.forEach((tag) => cdk.Tags.of(stack).add(tag.name, tag.value));
+  tags && tags.forEach((tag) => cdk.Tags.of(stack).add(tag.name, tag.value));
 
   const certificate = acm.Certificate.fromCertificateArn(
     stack,
     stackName + "Certificate",
-    domainProperties.domainCertificateArn
+    dns.domainCertificateArn
   );
 
-  const sourcedContainers = sourceContainerImages(stack, containerProperties);
+  const sourcedContainers = sourceContainerImages(stack, containers);
 
-  const { loadBalancer, services } = configureClusterAndServices(
+  const { loadBalancer, services } = configureALBServices(
     stackName,
     stack,
     cluster,
@@ -59,19 +69,19 @@ export const createStack = (
   });
 
   const zone = route53.HostedZone.fromLookup(stack, stackName + "ZONE", {
-    domainName: domainProperties.domainName,
+    domainName: dns.domainName,
   });
 
   new route53.ARecord(
     stack,
-    `${domainProperties.subdomainName}.${domainProperties.domainName}ALIAS_RECORD`,
+    `${dns.subdomainName}.${dns.domainName}ALIAS_RECORD`,
     {
-      recordName: domainProperties.subdomainName,
+      recordName: dns.subdomainName,
       target: route53.RecordTarget.fromAlias(
         new route53targets.LoadBalancerTarget(loadBalancer)
       ),
       ttl: cdk.Duration.seconds(60),
-      comment: domainProperties.subdomainName + "API domain",
+      comment: dns.subdomainName + "API domain",
       zone: zone,
     }
   );
@@ -81,7 +91,9 @@ export const createStack = (
     value: loadBalancer.loadBalancerDnsName,
   });
   new cdk.CfnOutput(stack, stackName + "DNS", {
-    value: `${domainProperties.subdomainName}.${domainProperties.domainName}`,
+    value: `${dns.subdomainName}.${dns.domainName}`,
   });
   return stack;
 };
+
+export default createECSStack;

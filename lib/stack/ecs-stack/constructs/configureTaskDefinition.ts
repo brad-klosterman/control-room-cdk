@@ -25,7 +25,7 @@ const configureTaskDefinition = ({
 }: {
   stack: cdk.Stack;
   containerProperties: ISourcedContainer;
-  tags: ITag[];
+  tags?: ITag[];
 }) => {
   const taskDefinition = new ecs.FargateTaskDefinition(
     stack,
@@ -51,7 +51,8 @@ const configureTaskDefinition = ({
       protocol: ecs.Protocol.TCP,
     });
 
-  tags.forEach((tag) => cdk.Tags.of(taskDefinition).add(tag.name, tag.value));
+  tags &&
+    tags.forEach((tag) => cdk.Tags.of(taskDefinition).add(tag.name, tag.value));
 
   return taskDefinition;
 };
