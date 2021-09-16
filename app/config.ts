@@ -91,7 +91,7 @@ export const AGENTS_STACK: IECStack = {
         APOLLO_KEY: apolloKey,
         APOLLO_GRAPH_REF: "SEON@current",
         HOST_PORT: "4000",
-        REDIS_HOST_ADDRESS: "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com"
+        REDIS_HOST_ADDRESS: "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379"
       },
     },
   ],

@@ -1,5 +1,6 @@
 import * as cdk from "@aws-cdk/core";
 import * as ec2 from "@aws-cdk/aws-ec2";
+import * as ecs from "@aws-cdk/aws-ecs";
 import * as elasticache from "@aws-cdk/aws-elasticache";
 
 import configureRedis from "./constructs/configureRedis";
@@ -13,12 +14,14 @@ export const createCache = ({
   scope,
   props,
   vpc,
+  cluster,
   cacheName,
   cacheProperties,
 }: {
   scope: cdk.App;
   props: cdk.StackProps;
   vpc: ec2.IVpc;
+  cluster: ecs.Cluster;
   cacheName: string;
   cacheProperties: elasticache.CfnReplicationGroupProps;
 }) => {
@@ -39,24 +42,27 @@ export const createCache = ({
 
   const securityGroup = new ec2.SecurityGroup(stack, cacheName + "SG", {
     vpc: vpc,
+    securityGroupName: cacheName + "SG",
     description: "SecurityGroup associated with the ElastiCache Redis Cluster",
-    // allowAllOutbound: false,
+    allowAllOutbound: true,
   });
 
-  // securityGroup.connections.allowFrom(scope, ec2.Port.tcp(6379), 'Redis ingress 6379');
-  // securityGroup.connections.allowTo(lambdaSecurityGroup, ec2.Port.tcp(6379), 'Redis egress 6379');
+  securityGroup.connections.allowFromAnyIpv4(
+    ec2.Port.tcp(6379),
+    "Redis ingress 6379"
+  );
 
-  new ec2.Connections({
-    securityGroups: [securityGroup],
-    defaultPort: new ec2.Port({
-      protocol: ec2.Protocol.TCP,
-      fromPort: 6379,
-      toPort: 6379,
-      stringRepresentation: "ec-sg-connection",
-    }),
-  });
+  // new ec2.Connections({
+  //   securityGroups: [securityGroup],
+  //   defaultPort: new ec2.Port({
+  //     protocol: ec2.Protocol.TCP,
+  //     fromPort: 6379,
+  //     toPort: 6379,
+  //     stringRepresentation: "ec-sg-connection",
+  //   }),
+  // });
 
-  const redis = configureRedis({    
+  const redis = configureRedis({
     stack,
     cacheName,
     cacheProperties: {
@@ -66,18 +72,15 @@ export const createCache = ({
     },
   });
 
-  redis.node.addDependency(subnetGroup)
-  // redis.addDependsOn(subnetGroup);
+  redis.node.addDependency(subnetGroup);
 
-  // const redisUrl =
-  //   "redis://" +
-  //   redis.attrReadEndPointAddresses +
-  //   ":" +
-  //   redis.attrReadEndPointPorts;
+  new cdk.CfnOutput(stack, cacheName + "/Redis Endpoint", {
+    value: redis.attrPrimaryEndPointAddress,
+  });
 
-  // new cdk.CfnOutput(stack, cacheName + "REDIS", {
-  //   value: redisUrl,
-  // });
+  new cdk.CfnOutput(stack, cacheName + "/Redis Port", {
+    value: redis.attrPrimaryEndPointPort,
+  });
 
   return {
     redis,

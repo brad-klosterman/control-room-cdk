@@ -1,7 +1,10 @@
 import * as cdk from "@aws-cdk/core";
 import * as elasticache from "@aws-cdk/aws-elasticache";
 
-/** AWS::ElastiCache::ReplicationGroup
+/** The AWS::ElastiCache::ReplicationGroup
+ * A Redis (cluster mode disabled) replication group is a collection of
+ * cache clusters, where one of the clusters is a primary read-write cluster
+ * and the others are read-only replicas.
  *
  * @param stack                 The CDK stack
  * @param containerProperties   The container parameters

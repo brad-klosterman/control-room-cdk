@@ -32,6 +32,7 @@ createCache({
   scope: APP.cdk,
   props: APP.props,
   vpc,
+  cluster,
   cacheName: APP.name + "CACHE",
   cacheProperties: {
     replicationGroupDescription: APP.name + "REDIS_REP_GROUP",
