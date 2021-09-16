@@ -60,6 +60,7 @@ const configureExecutionRole = ({
       ],
     })
   );
+  
   role.addToPolicy(
     new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,

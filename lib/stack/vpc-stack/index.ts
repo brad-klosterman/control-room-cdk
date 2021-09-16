@@ -59,6 +59,7 @@ export const createVPC = ({
     paramKey: cloudName + "ARN",
     paramValue: cloudMapNamespace.namespaceArn,
   });
+  
   putParameter({
     stack,
     paramKey: cloudName + "ID",

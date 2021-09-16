@@ -39,6 +39,7 @@ const configureTaskDefinition = ({
       // }),
     }
   );
+  
   taskDefinition
     .addContainer(`${container.id}Container`, {
       image: ecs.ContainerImage.fromEcrRepository(container.ecrRepo),

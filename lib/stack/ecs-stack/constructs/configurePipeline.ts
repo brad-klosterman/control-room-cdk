@@ -59,7 +59,7 @@ const configurePipeline = ({
           buildOutput,
           `imagedefinitions.json`
         ),
-        deploymentTimeout: cdk.Duration.minutes(60),
+        deploymentTimeout: cdk.Duration.minutes(20),
       });
 
       return {

@@ -5,7 +5,12 @@ import createVPC from "../lib/stack/vpc-stack";
 import createECSStack from "../lib/stack/ecs-stack";
 import createCache from "../lib/stack/cache-stack";
 
-import { APP, GATEWAY_STACK, AGENTS_STACK } from "./config";
+import {
+  APP,
+  GATEWAY_STACK,
+  AGENTS_STACK,
+  SUBSCRIPTIONS_STACK,
+} from "./config";
 
 // Construct VPCStack
 const { vpc, cluster, cloudMapNamespace } = createVPC({
@@ -54,7 +59,19 @@ createECSStack({
   tags: GATEWAY_STACK.tags,
 });
 
-// Construct AGENTS_STACKGateway 
+// Construct SUBSCRIPTIONS_STACKGateway
+createECSStack({
+  scope: APP.cdk,
+  props: APP.props,
+  vpc,
+  cluster,
+  stackName: SUBSCRIPTIONS_STACK.name,
+  containers: SUBSCRIPTIONS_STACK.containers,
+  dns: SUBSCRIPTIONS_STACK.dns,
+  tags: SUBSCRIPTIONS_STACK.tags,
+});
+
+// Construct AGENTS_STACKGateway
 createECSStack({
   scope: APP.cdk,
   props: APP.props,

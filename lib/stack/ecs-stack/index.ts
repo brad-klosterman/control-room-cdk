@@ -88,6 +88,7 @@ const createECSStack = ({
   new cdk.CfnOutput(stack, stackName + "ALB-DNS", {
     value: loadBalancer.loadBalancerDnsName,
   });
+  
   new cdk.CfnOutput(stack, stackName + "PUBLIC-DNS", {
     value: `${URL}`,
   });

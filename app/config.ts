@@ -52,19 +52,20 @@ export const GATEWAY_STACK: IECStack = {
 };
 
 export const SUBSCRIPTIONS_STACK: IECStack = {
-  name: APP.name + "SUBSCRIPTIONSSTACK",
+  name: APP.name + "SUBSCRIPTIONS",
   containers: [
     {
       id: "subscriptions",
       repo: "seon-gateway-events",
-      containerPort: 4000,
+      containerPort: 5000,
       conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
       environment: {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
-        APOLLO_GRAPH_REF: "SEON@current",
-        HOST_PORT: "4000",
+        APOLLO_GRAPH_VARIANT: "current",
+        HOST_PORT: "5000",
+        REDIS_HOST_ADDRESS: "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com"
       },
     },
   ],
