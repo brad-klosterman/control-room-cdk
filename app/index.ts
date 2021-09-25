@@ -10,6 +10,8 @@ import {
   GATEWAY_STACK,
   AGENTS_STACK,
   SUBSCRIPTIONS_STACK,
+  ALARMS_STACK,
+  SSP_STACK
 } from "./config";
 
 // Construct VPCStack
@@ -82,6 +84,30 @@ createECSStack({
   containers: AGENTS_STACK.containers,
   dns: AGENTS_STACK.dns,
   tags: AGENTS_STACK.tags,
+});
+
+// Construct ALARMS_STACKGateway
+createECSStack({
+  scope: APP.cdk,
+  props: APP.props,
+  vpc,
+  cluster,
+  stackName: ALARMS_STACK.name,
+  containers: ALARMS_STACK.containers,
+  dns: ALARMS_STACK.dns,
+  tags: ALARMS_STACK.tags,
+});
+
+// Construct SSP and SSPCustomers Stack
+createECSStack({
+  scope: APP.cdk,
+  props: APP.props,
+  vpc,
+  cluster,
+  stackName: SSP_STACK.name,
+  containers: SSP_STACK.containers,
+  dns: SSP_STACK.dns,
+  tags: SSP_STACK.tags,
 });
 
 APP.cdk.synth();

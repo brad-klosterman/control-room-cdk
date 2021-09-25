@@ -34,9 +34,14 @@ export const createCache = ({
     {
       cacheSubnetGroupName: cacheName + "SNGroup",
       description: cacheName + " Elasticache Subnet Group",
-      subnetIds: vpc.privateSubnets.map(function (subnet) {
-        return subnet.subnetId;
-      }),
+      subnetIds: [
+        ...vpc.privateSubnets.map(function (subnet) {
+          return subnet.subnetId;
+        }),
+        // ...vpc.publicSubnets.map(function (subnet) {
+        //   return subnet.subnetId;
+        // }),
+      ],
     }
   );
 

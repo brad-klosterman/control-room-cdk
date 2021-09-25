@@ -39,7 +39,7 @@ export const GATEWAY_STACK: IECStack = {
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
         APOLLO_GRAPH_REF: "SEON@current",
-        GATEWAY_PORT: "4000",
+        HOST_PORT: "4000",
       },
     },
   ],
@@ -65,7 +65,8 @@ export const SUBSCRIPTIONS_STACK: IECStack = {
         APOLLO_KEY: apolloKey,
         APOLLO_GRAPH_VARIANT: "current",
         HOST_PORT: "5000",
-        REDIS_HOST_ADDRESS: "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com"
+        REDIS_HOST_ADDRESS:
+          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
       },
     },
   ],
@@ -91,7 +92,8 @@ export const AGENTS_STACK: IECStack = {
         APOLLO_KEY: apolloKey,
         APOLLO_GRAPH_REF: "SEON@current",
         HOST_PORT: "4000",
-        REDIS_HOST_ADDRESS: "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379"
+        REDIS_HOST_ADDRESS:
+          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
       },
     },
   ],
@@ -101,4 +103,60 @@ export const AGENTS_STACK: IECStack = {
     domainCertificateArn,
   },
   tags: [{ name: "ECS_AGENTS", value: "seon-gateway-agents" }],
+};
+
+export const ALARMS_STACK: IECStack = {
+  name: APP.name + "ALARMS",
+  containers: [
+    {
+      id: "alarms",
+      repo: "seon-alarms-graph",
+      containerPort: 4000,
+      conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
+      environment: {
+        APP_ENVIRONMENT: environment,
+        NODE_ENV: environment,
+        APOLLO_KEY: apolloKey,
+        APOLLO_GRAPH_REF: "SEON@current",
+        HOST_PORT: "4000",
+        REDIS_HOST_ADDRESS:
+          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
+        GLOBAL_AGENT_SOCKET_CONNECTION_TIMEOUT: "60000",
+      },
+    },
+  ],
+  dns: {
+    domainName: "seon-gateway.com",
+    subdomainName: environment + ".alarms",
+    domainCertificateArn,
+  },
+  tags: [{ name: "ECS_ALARMS", value: "seon-gateway-alarms" }],
+};
+
+export const SSP_STACK: IECStack = {
+  name: APP.name + "SSP",
+  containers: [
+    {
+      id: "ssp",
+      repo: "seon-ssp-customers-graph",
+      containerPort: 4000,
+      conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
+      environment: {
+        APP_ENVIRONMENT: environment,
+        NODE_ENV: environment,
+        APOLLO_KEY: apolloKey,
+        APOLLO_GRAPH_REF: "SEON@current",
+        HOST_PORT: "4000",
+        REDIS_HOST_ADDRESS:
+          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
+        GLOBAL_AGENT_SOCKET_CONNECTION_TIMEOUT: "60000",
+      },
+    },
+  ],
+  dns: {
+    domainName: "seon-gateway.com",
+    subdomainName: environment + ".ssp-customers",
+    domainCertificateArn,
+  },
+  tags: [{ name: "ECS_SSP", value: "seon-ssp-customers-graph" }],
 };
