@@ -65,6 +65,7 @@ export const SUBSCRIPTIONS_STACK: IECStack = {
         APOLLO_KEY: apolloKey,
         APOLLO_GRAPH_VARIANT: "current",
         HOST_PORT: "5000",
+        GATEWAY_ENDPOINT: `https://${environment}.seon-gateway.com`,
         REDIS_HOST_ADDRESS:
           "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
       },

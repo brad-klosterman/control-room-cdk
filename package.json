@@ -7,7 +7,8 @@
     "test": "jest",
     "cdk": "cdk",
     "open-redis": "sudo openvpn --config ./scripts/cert/client-config.ovpn",
-    "deploy-cdk": "cdk deploy -c certificateIdentifier=0f94ef5b-01ac-4794-a999-8368578ec3d4 -c environment=dev -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all"
+    "deploy-cdk": "cdk deploy -c certificateIdentifier=0f94ef5b-01ac-4794-a999-8368578ec3d4 -c environment=dev -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
+    "deploy-ssp": "cdk deploy -c certificateIdentifier=0f94ef5b-01ac-4794-a999-8368578ec3d4 -c environment=dev -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon SEONdevSSP"
   },
   "engines": {
     "node": "^16.3.0"
