@@ -34,7 +34,7 @@ const configurePipeline = ({
       const sourceAction = new actions.GitHubSourceAction({
         owner: "SEON-GmbH",
         repo: container.repo,
-        branch: "main",
+        branch: container.branch,
         actionName: `${container.id}_SourceMerge`,
         oauthToken: cdk.SecretValue.secretsManager("seon-github-token"),
         output: sourceOutput,

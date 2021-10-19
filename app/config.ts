@@ -5,6 +5,7 @@ import { IECStack } from "../lib/stack/ecs-stack/interfaces";
 const app = new cdk.App();
 const environment = app.node.tryGetContext("environment");
 const certificateIdentifier = app.node.tryGetContext("certificateIdentifier");
+const redisUrl = app.node.tryGetContext("redisUrl");
 const apolloKey = app.node.tryGetContext("apolloKey");
 
 if (environment === undefined) {
@@ -30,15 +31,17 @@ export const GATEWAY_STACK: IECStack = {
   name: APP.name + "GATEWAYSTACK",
   containers: [
     {
-      id: "federation",
+      id: "federation-" + environment,
       repo: "seon-federation-gateway",
+      healthCheck: "/.well-known/apollo/server-health",
+      branch: environment === "prod" ? "main" : environment,
       containerPort: 4000,
       conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
       environment: {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
-        APOLLO_GRAPH_REF: "SEON@current",
+        APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
       },
     },
@@ -48,116 +51,119 @@ export const GATEWAY_STACK: IECStack = {
     domainName: "seon-gateway.com",
     subdomainName: environment,
   },
-  tags: [{ name: "ECS", value: "gateway-service" }],
+  tags: [{ name: "ECS" + environment, value: "federation-" + environment }],
 };
 
 export const SUBSCRIPTIONS_STACK: IECStack = {
   name: APP.name + "SUBSCRIPTIONS",
   containers: [
     {
-      id: "subscriptions",
+      id: "subscriptions-" + environment,
       repo: "seon-gateway-events",
+      healthCheck: "/",
+      branch: environment === "prod" ? "main" : environment,
       containerPort: 5000,
       conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
       environment: {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
-        APOLLO_GRAPH_VARIANT: "current",
+        APOLLO_GRAPH_VARIANT: environment,
         HOST_PORT: "5000",
         GATEWAY_ENDPOINT: `https://${environment}.seon-gateway.com`,
-        REDIS_HOST_ADDRESS:
-          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
+        ELASTI_URL: redisUrl,
+        ELASTI_PORT: "6379",
       },
     },
   ],
   dns: {
     domainName: "seon-gateway.com",
-    subdomainName: environment + ".subscriptions",
+    subdomainName: "subscriptions." + environment,
     domainCertificateArn,
   },
-  tags: [{ name: "ECS", value: "seon-gateway-subscriptions" }],
+  tags: [{ name: "ECS" + environment, value: "subscriptions-" + environment }],
 };
 
 export const AGENTS_STACK: IECStack = {
   name: APP.name + "AGENTS",
   containers: [
     {
-      id: "agents",
+      id: "agents-" + environment,
       repo: "seon-agents-graph",
+      healthCheck: "/.well-known/apollo/server-health",
+      branch: environment === "prod" ? "main" : environment,
       containerPort: 4000,
       conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
       environment: {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
-        APOLLO_GRAPH_REF: "SEON@current",
+        APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
-        REDIS_HOST_ADDRESS:
-          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
+        REDIS_HOST_ADDRESS: redisUrl,
       },
     },
   ],
   dns: {
     domainName: "seon-gateway.com",
-    subdomainName: environment + ".agents",
+    subdomainName: "agents." + environment,
     domainCertificateArn,
   },
-  tags: [{ name: "ECS_AGENTS", value: "seon-gateway-agents" }],
+  tags: [{ name: "ECS_AGENTS" + environment, value: "agents-" + environment }],
 };
 
 export const ALARMS_STACK: IECStack = {
   name: APP.name + "ALARMS",
   containers: [
     {
-      id: "alarms",
+      id: "alarms-" + environment,
       repo: "seon-alarms-graph",
+      healthCheck: "/.well-known/apollo/server-health",
+      branch: environment === "prod" ? "main" : environment,
       containerPort: 4000,
       conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
       environment: {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
-        APOLLO_GRAPH_REF: "SEON@current",
+        APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
-        REDIS_HOST_ADDRESS:
-          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
-        GLOBAL_AGENT_SOCKET_CONNECTION_TIMEOUT: "60000",
+        REDIS_HOST_ADDRESS: redisUrl,
       },
     },
   ],
   dns: {
     domainName: "seon-gateway.com",
-    subdomainName: environment + ".alarms",
+    subdomainName: "alarms." + environment,
     domainCertificateArn,
   },
-  tags: [{ name: "ECS_ALARMS", value: "seon-gateway-alarms" }],
+  tags: [{ name: "ECS_ALARMS" + environment, value: "alarms-" + environment }],
 };
 
 export const SSP_STACK: IECStack = {
   name: APP.name + "SSP",
   containers: [
     {
-      id: "ssp",
+      id: "ssp-" + environment,
       repo: "seon-ssp-customers-graph",
+      healthCheck: "/.well-known/apollo/server-health",
+      branch: environment === "prod" ? "main" : environment,
       containerPort: 4000,
       conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
       environment: {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
-        APOLLO_GRAPH_REF: "SEON@current",
+        APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
-        REDIS_HOST_ADDRESS:
-          "ses1b4su55iwynwb.s1azzv.ng.0001.euc1.cache.amazonaws.com:6379",
-        GLOBAL_AGENT_SOCKET_CONNECTION_TIMEOUT: "60000",
+        REDIS_HOST_ADDRESS: redisUrl,
       },
     },
   ],
   dns: {
     domainName: "seon-gateway.com",
-    subdomainName: environment + ".ssp-customers",
+    subdomainName: "ssp-customers." + environment,
     domainCertificateArn,
   },
-  tags: [{ name: "ECS_SSP", value: "seon-ssp-customers-graph" }],
+  tags: [{ name: "ECS_SSP" + environment, value: "ssp-" + environment }],
 };

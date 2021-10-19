@@ -19,6 +19,8 @@ export interface IContainerProperties {
   containerPort: number;
   // Name of GitHub repo
   repo: string;
+  branch: string;
+  healthCheck: string;
   // Environment variables for the container
   environment: { [key: string]: string };
   // Define the path or host header for routing traffic

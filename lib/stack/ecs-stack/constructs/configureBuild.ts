@@ -54,6 +54,11 @@ const configureBuild = ({
             "echo $TAG",
           ],
         },
+        install: {
+          commands: [
+            "echo Seon20212021! | docker login -u seongroup --password-stdin",
+          ],
+        },
         build: {
           commands: [
             'echo "In Build Phase"',

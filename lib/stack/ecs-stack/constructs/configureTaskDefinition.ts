@@ -39,12 +39,12 @@ const configureTaskDefinition = ({
       // }),
     }
   );
-  
+
   taskDefinition
     .addContainer(`${container.id}Container`, {
       image: ecs.ContainerImage.fromEcrRepository(container.ecrRepo),
       // image: ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample"),
-      memoryLimitMiB: 256,
+      // memoryLimitMiB: 256,
       environment: container.environment,
       logging: new ecs.AwsLogDriver({ streamPrefix: container.id }),
     })

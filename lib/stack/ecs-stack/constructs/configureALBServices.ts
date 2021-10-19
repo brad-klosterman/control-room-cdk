@@ -27,8 +27,9 @@ const configureALBServices = (
     (container) =>
       new ecs.FargateService(stack, `${container.id}FargateService`, {
         cluster,
-        // assignPublicIp: true,
-        desiredCount: 5,
+        assignPublicIp: false,
+        desiredCount: 2,
+        minHealthyPercent: 0,
         taskDefinition: configureTaskDefinition({
           stack,
           containerProperties: container,
@@ -67,7 +68,7 @@ const configureALBServices = (
         conditions: containerProperties[i].conditions,
         healthCheck: {
           interval: cdk.Duration.seconds(300),
-          path: "/.well-known/apollo/server-health",
+          path: containerProperties[i].healthCheck,
           port: containerProperties[i].containerPort.toString(),
           timeout: cdk.Duration.seconds(10),
         },

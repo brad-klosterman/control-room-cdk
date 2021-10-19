@@ -35,12 +35,8 @@ export const createCache = ({
       cacheSubnetGroupName: cacheName + "SNGroup",
       description: cacheName + " Elasticache Subnet Group",
       subnetIds: [
-        ...vpc.privateSubnets.map(function (subnet) {
-          return subnet.subnetId;
-        }),
-        // ...vpc.publicSubnets.map(function (subnet) {
-        //   return subnet.subnetId;
-        // }),
+        ...vpc.privateSubnets.map(({ subnetId }) => subnetId),
+        ...vpc.publicSubnets.map(({ subnetId }) => subnetId),
       ],
     }
   );
@@ -57,15 +53,15 @@ export const createCache = ({
     "Redis ingress 6379"
   );
 
-  // new ec2.Connections({
-  //   securityGroups: [securityGroup],
-  //   defaultPort: new ec2.Port({
-  //     protocol: ec2.Protocol.TCP,
-  //     fromPort: 6379,
-  //     toPort: 6379,
-  //     stringRepresentation: "ec-sg-connection",
-  //   }),
-  // });
+  new ec2.Connections({
+    securityGroups: [securityGroup],
+    defaultPort: new ec2.Port({
+      protocol: ec2.Protocol.TCP,
+      fromPort: 6379,
+      toPort: 6379,
+      stringRepresentation: "ec-sg-connection",
+    }),
+  });
 
   const redis = configureRedis({
     stack,
