@@ -27,6 +27,10 @@ export interface IContainerProperties {
   conditions: loadBalancerV2.ListenerCondition[];
 }
 
+export interface IALBProperties {
+  protocol: string;
+}
+
 export interface ISourcedContainer extends IContainerProperties {
   // ECR Repo
   ecrRepo: ecr.IRepository;
@@ -52,6 +56,7 @@ export interface IDNS {
 export interface IECStack {
   name: string;
   containers: IContainerProperties[];
+  alb: IALBProperties;
   dns: IDNS;
   tags?: ITag[];
 }

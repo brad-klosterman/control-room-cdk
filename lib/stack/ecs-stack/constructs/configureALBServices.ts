@@ -6,7 +6,7 @@ import * as loadBalancerV2 from "@aws-cdk/aws-elasticloadbalancingv2";
 
 import configureTaskDefinition from "./configureTaskDefinition";
 import createHttpsRedirect from "./createHttpsRedirect";
-import { ITag, ISourcedContainer } from "../interfaces";
+import { ITag, ISourcedContainer, IALBProperties } from "../interfaces";
 
 /** A task definition is required to run Docker containers in Amazon ECS.
  * Fargate, you no longer have to provision, configure, or scale clusters of virtual machines to run containers.
@@ -21,8 +21,10 @@ const configureALBServices = (
   cluster: ecs.Cluster,
   certificate: acm.ICertificate,
   containerProperties: ISourcedContainer[],
+  alb: IALBProperties,
   tags?: ITag[]
 ) => {
+  let listener: loadBalancerV2.ApplicationListener;
   const services = containerProperties.map(
     (container) =>
       new ecs.FargateService(stack, `${container.id}FargateService`, {
@@ -47,15 +49,21 @@ const configureALBServices = (
     }
   );
 
-  createHttpsRedirect(stackName, stack, loadBalancer);
-
-  const listener = loadBalancer.addListener(`HttpsListener`, {
-    port: 443,
-    open: true,
-    certificates: [
-      loadBalancerV2.ListenerCertificate.fromArn(certificate.certificateArn),
-    ],
-  });
+  if (alb.protocol === "HTTPS") {
+    createHttpsRedirect(stackName, stack, loadBalancer);
+    listener = loadBalancer.addListener(`HttpsListener`, {
+      port: 443,
+      open: true,
+      certificates: [
+        loadBalancerV2.ListenerCertificate.fromArn(certificate.certificateArn),
+      ],
+    });
+  } else {
+    listener = loadBalancer.addListener(`HttpListener`, {
+      port: 80,
+      open: true,
+    });
+  }
 
   services.forEach((service, i) =>
     service.registerLoadBalancerTargets({

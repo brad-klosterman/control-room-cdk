@@ -11,7 +11,8 @@ import {
   AGENTS_STACK,
   SUBSCRIPTIONS_STACK,
   ALARMS_STACK,
-  SSP_STACK
+  SSP_STACK,
+  RTC_STACK,
 } from "./config";
 
 // Construct VPCStack
@@ -46,6 +47,7 @@ createCache({
     // numCacheClusters: 1,
     numNodeGroups: 1,
     replicasPerNodeGroup: 1,
+    cacheParameterGroupName: "keyevent",
     // primaryClusterId: cluster.clusterName,
   },
 });
@@ -59,6 +61,7 @@ createECSStack({
   stackName: GATEWAY_STACK.name,
   containers: GATEWAY_STACK.containers,
   dns: GATEWAY_STACK.dns,
+  alb: GATEWAY_STACK.alb,
   tags: GATEWAY_STACK.tags,
 });
 
@@ -71,6 +74,7 @@ createECSStack({
   stackName: SUBSCRIPTIONS_STACK.name,
   containers: SUBSCRIPTIONS_STACK.containers,
   dns: SUBSCRIPTIONS_STACK.dns,
+  alb: SUBSCRIPTIONS_STACK.alb,
   tags: SUBSCRIPTIONS_STACK.tags,
 });
 
@@ -83,6 +87,7 @@ createECSStack({
   stackName: AGENTS_STACK.name,
   containers: AGENTS_STACK.containers,
   dns: AGENTS_STACK.dns,
+  alb: AGENTS_STACK.alb,
   tags: AGENTS_STACK.tags,
 });
 
@@ -95,6 +100,7 @@ createECSStack({
   stackName: ALARMS_STACK.name,
   containers: ALARMS_STACK.containers,
   dns: ALARMS_STACK.dns,
+  alb: ALARMS_STACK.alb,
   tags: ALARMS_STACK.tags,
 });
 
@@ -107,7 +113,21 @@ createECSStack({
   stackName: SSP_STACK.name,
   containers: SSP_STACK.containers,
   dns: SSP_STACK.dns,
+  alb: SSP_STACK.alb,
   tags: SSP_STACK.tags,
+});
+
+// Construct RTC Stack
+createECSStack({
+  scope: APP.cdk,
+  props: APP.props,
+  vpc,
+  cluster,
+  stackName: RTC_STACK.name,
+  containers: RTC_STACK.containers,
+  dns: RTC_STACK.dns,
+  alb: RTC_STACK.alb,
+  tags: RTC_STACK.tags,
 });
 
 APP.cdk.synth();

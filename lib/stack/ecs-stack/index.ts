@@ -8,7 +8,12 @@ import * as route53targets from "@aws-cdk/aws-route53-targets";
 import configureALBServices from "./constructs/configureALBServices";
 import sourceContainerImages from "./constructs/sourceContainerImages";
 import configurePipeline from "./constructs/configurePipeline";
-import { ITag, IDomainProperties, IContainerProperties } from "./interfaces";
+import {
+  ITag,
+  IDomainProperties,
+  IContainerProperties,
+  IALBProperties,
+} from "./interfaces";
 
 /** Constructs the stack with given properties.
  * @param scope                 The CDK app
@@ -28,6 +33,7 @@ const createECSStack = ({
   stackName,
   containers,
   dns,
+  alb,
   tags,
 }: {
   scope: cdk.App;
@@ -37,6 +43,7 @@ const createECSStack = ({
   stackName: string;
   containers: IContainerProperties[];
   dns: IDomainProperties;
+  alb: IALBProperties;
   tags?: ITag[];
 }) => {
   const stack = new cdk.Stack(scope, stackName, props);
@@ -57,6 +64,7 @@ const createECSStack = ({
     cluster,
     certificate,
     sourcedContainers,
+    alb,
     tags
   );
 
@@ -88,7 +96,7 @@ const createECSStack = ({
   new cdk.CfnOutput(stack, stackName + "ALB-DNS", {
     value: loadBalancer.loadBalancerDnsName,
   });
-  
+
   new cdk.CfnOutput(stack, stackName + "PUBLIC-DNS", {
     value: `${URL}`,
   });

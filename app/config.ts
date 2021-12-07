@@ -51,6 +51,9 @@ export const GATEWAY_STACK: IECStack = {
     domainName: "seon-gateway.com",
     subdomainName: environment,
   },
+  alb: {
+    protocol: "HTTPS",
+  },
   tags: [{ name: "ECS" + environment, value: "federation-" + environment }],
 };
 
@@ -71,8 +74,7 @@ export const SUBSCRIPTIONS_STACK: IECStack = {
         APOLLO_GRAPH_VARIANT: environment,
         HOST_PORT: "5000",
         GATEWAY_ENDPOINT: `https://${environment}.seon-gateway.com`,
-        ELASTI_URL: redisUrl,
-        ELASTI_PORT: "6379",
+        REDIS_HOST_ADDRESS: redisUrl,
       },
     },
   ],
@@ -80,6 +82,9 @@ export const SUBSCRIPTIONS_STACK: IECStack = {
     domainName: "seon-gateway.com",
     subdomainName: "subscriptions." + environment,
     domainCertificateArn,
+  },
+  alb: {
+    protocol: "HTTPS",
   },
   tags: [{ name: "ECS" + environment, value: "subscriptions-" + environment }],
 };
@@ -101,6 +106,10 @@ export const AGENTS_STACK: IECStack = {
         APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
         REDIS_HOST_ADDRESS: redisUrl,
+        SEON_RESTAPI_BASEURL:
+          environment === "prod"
+            ? "https://api.seon.network/"
+            : "https://api.staging.seon.network/",
       },
     },
   ],
@@ -108,6 +117,9 @@ export const AGENTS_STACK: IECStack = {
     domainName: "seon-gateway.com",
     subdomainName: "agents." + environment,
     domainCertificateArn,
+  },
+  alb: {
+    protocol: "HTTPS",
   },
   tags: [{ name: "ECS_AGENTS" + environment, value: "agents-" + environment }],
 };
@@ -137,6 +149,9 @@ export const ALARMS_STACK: IECStack = {
     subdomainName: "alarms." + environment,
     domainCertificateArn,
   },
+  alb: {
+    protocol: "HTTPS",
+  },
   tags: [{ name: "ECS_ALARMS" + environment, value: "alarms-" + environment }],
 };
 
@@ -165,5 +180,39 @@ export const SSP_STACK: IECStack = {
     subdomainName: "ssp-customers." + environment,
     domainCertificateArn,
   },
+  alb: {
+    protocol: "HTTPS",
+  },
   tags: [{ name: "ECS_SSP" + environment, value: "ssp-" + environment }],
+};
+
+export const RTC_STACK: IECStack = {
+  name: APP.name + "RTC",
+  containers: [
+    {
+      id: "rtc-" + environment,
+      repo: "seon-rtc",
+      healthCheck: "/health-check",
+      branch: environment === "prod" ? "main" : environment,
+      containerPort: 4000,
+      conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
+      environment: {
+        APP_ENVIRONMENT: environment,
+        NODE_ENV: environment,
+        APOLLO_KEY: apolloKey,
+        APOLLO_GRAPH_REF: "SEON@" + environment,
+        HOST_PORT: "4000",
+        REDIS_HOST_ADDRESS: redisUrl,
+      },
+    },
+  ],
+  dns: {
+    domainName: "seon-gateway.com",
+    subdomainName: "rtc." + environment,
+    domainCertificateArn,
+  },
+  alb: {
+    protocol: "HTTP",
+  },
+  tags: [{ name: "ECS_RTC" + environment, value: "rtc-" + environment }],
 };

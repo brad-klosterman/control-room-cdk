@@ -3,6 +3,7 @@ import * as ecs from "@aws-cdk/aws-ecs";
 import * as iam from "@aws-cdk/aws-iam";
 import { configureExecutionRole, createTaskRole } from "./configureRoles";
 import { ITag, ISourcedContainer } from "../interfaces";
+import { Effect } from "@aws-cdk/aws-iam";
 
 /** A task definition is required to run Docker containers in Amazon ECS.
  * The Docker image to use with (each) container in your task
@@ -52,6 +53,14 @@ const configureTaskDefinition = ({
       containerPort: container.containerPort,
       protocol: ecs.Protocol.TCP,
     });
+
+  taskDefinition.addToTaskRolePolicy(
+    new iam.PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+      resources: ["*"],
+    })
+  );
 
   tags &&
     tags.forEach((tag) => cdk.Tags.of(taskDefinition).add(tag.name, tag.value));
