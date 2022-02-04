@@ -30,7 +30,7 @@ const configureALBServices = (
       new ecs.FargateService(stack, `${container.id}FargateService`, {
         cluster,
         assignPublicIp: false,
-        desiredCount: 2,
+        desiredCount: alb.instanceCount,
         minHealthyPercent: 0,
         taskDefinition: configureTaskDefinition({
           stack,

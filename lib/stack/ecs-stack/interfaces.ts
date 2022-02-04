@@ -29,6 +29,7 @@ export interface IContainerProperties {
 
 export interface IALBProperties {
   protocol: string;
+  instanceCount: number;
 }
 
 export interface ISourcedContainer extends IContainerProperties {

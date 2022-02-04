@@ -53,6 +53,7 @@ export const GATEWAY_STACK: IECStack = {
   },
   alb: {
     protocol: "HTTPS",
+    instanceCount: environment === "prod" ? 2 : 1,
   },
   tags: [{ name: "ECS" + environment, value: "federation-" + environment }],
 };
@@ -85,6 +86,7 @@ export const SUBSCRIPTIONS_STACK: IECStack = {
   },
   alb: {
     protocol: "HTTPS",
+    instanceCount: environment === "prod" ? 2 : 1,
   },
   tags: [{ name: "ECS" + environment, value: "subscriptions-" + environment }],
 };
@@ -120,6 +122,7 @@ export const AGENTS_STACK: IECStack = {
   },
   alb: {
     protocol: "HTTPS",
+    instanceCount: environment === "prod" ? 2 : 1,
   },
   tags: [{ name: "ECS_AGENTS" + environment, value: "agents-" + environment }],
 };
@@ -151,6 +154,7 @@ export const ALARMS_STACK: IECStack = {
   },
   alb: {
     protocol: "HTTPS",
+    instanceCount: environment === "prod" ? 2 : 1,
   },
   tags: [{ name: "ECS_ALARMS" + environment, value: "alarms-" + environment }],
 };
@@ -182,6 +186,7 @@ export const SSP_STACK: IECStack = {
   },
   alb: {
     protocol: "HTTPS",
+    instanceCount: environment === "prod" ? 2 : 1,
   },
   tags: [{ name: "ECS_SSP" + environment, value: "ssp-" + environment }],
 };
@@ -213,6 +218,7 @@ export const RTC_STACK: IECStack = {
   },
   alb: {
     protocol: "HTTP",
+    instanceCount: environment === "prod" ? 2 : 1,
   },
   tags: [{ name: "ECS_RTC" + environment, value: "rtc-" + environment }],
 };
