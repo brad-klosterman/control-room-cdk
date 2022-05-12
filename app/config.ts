@@ -144,6 +144,10 @@ export const ALARMS_STACK: IECStack = {
         APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
         REDIS_HOST_ADDRESS: redisUrl,
+        SEON_RESTAPI_BASEURL:
+            environment === "prod"
+                ? "https://api.seon.network/"
+                : "https://api.staging.seon.network/",
       },
     },
   ],
@@ -176,6 +180,10 @@ export const SSP_STACK: IECStack = {
         APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
         REDIS_HOST_ADDRESS: redisUrl,
+        SEON_RESTAPI_BASEURL:
+            environment === "prod"
+                ? "https://api.seon.network/"
+                : "https://api.staging.seon.network/",
       },
     },
   ],
@@ -208,6 +216,10 @@ export const RTC_STACK: IECStack = {
         APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "4000",
         REDIS_HOST_ADDRESS: redisUrl,
+        SEON_RESTAPI_BASEURL:
+            environment === "prod"
+                ? "https://api.seon.network/"
+                : "https://api.staging.seon.network/",
       },
     },
   ],
