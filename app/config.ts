@@ -234,3 +234,39 @@ export const RTC_STACK: IECStack = {
   },
   tags: [{ name: "ECS_RTC" + environment, value: "rtc-" + environment }],
 };
+
+export const RUBY_DRONE_STACK: IECStack = {
+  name: APP.name + "RDRONE",
+  containers: [
+    {
+      id: "rdrone-" + environment,
+      repo: "seon-ruby-aws",
+      healthCheck: "/health-check",
+      branch: environment === "prod" ? "main" : environment,
+      containerPort: 3000,
+      conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
+      environment: {
+        APP_ENVIRONMENT: environment,
+        NODE_ENV: environment,
+        APOLLO_KEY: apolloKey,
+        APOLLO_GRAPH_REF: "SEON@" + environment,
+        HOST_PORT: "3000",
+        REDIS_HOST_ADDRESS: redisUrl,
+        SEON_RESTAPI_BASEURL:
+            environment === "prod"
+                ? "https://api.seon.network/"
+                : "https://api.staging.seon.network/",
+      },
+    },
+  ],
+  dns: {
+    domainName: "seon-gateway.com",
+    subdomainName: "rdrone." + environment,
+    domainCertificateArn,
+  },
+  alb: {
+    protocol: "HTTP",
+    instanceCount: environment === "prod" ? 2 : 1,
+  },
+  tags: [{ name: "ECS_RDRONE" + environment, value: "rdrone-" + environment }],
+};

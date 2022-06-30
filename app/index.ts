@@ -13,6 +13,7 @@ import {
   ALARMS_STACK,
   SSP_STACK,
   RTC_STACK,
+  RUBY_DRONE_STACK,
 } from "./config";
 
 // Construct VPCStack
@@ -128,6 +129,19 @@ createECSStack({
   dns: RTC_STACK.dns,
   alb: RTC_STACK.alb,
   tags: RTC_STACK.tags,
+});
+
+// Construct RDRONE Stack
+createECSStack({
+  scope: APP.cdk,
+  props: APP.props,
+  vpc,
+  cluster,
+  stackName: RUBY_DRONE_STACK.name,
+  containers: RUBY_DRONE_STACK.containers,
+  dns: RUBY_DRONE_STACK.dns,
+  alb: RUBY_DRONE_STACK.alb,
+  tags: RUBY_DRONE_STACK.tags,
 });
 
 APP.cdk.synth();
