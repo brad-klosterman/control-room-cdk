@@ -10,3 +10,7 @@ node_modules
 .cdk.staging
 cdk.out
 cdk.context.json
+
+
+/.idea/
+/.idea/

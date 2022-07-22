@@ -13,7 +13,7 @@ import {
   ALARMS_STACK,
   SSP_STACK,
   RTC_STACK,
-  RUBY_DRONE_STACK,
+  RDRONE_STACK,
 } from "./config";
 
 // Construct VPCStack
@@ -30,6 +30,7 @@ const { vpc, cluster, cloudMapNamespace } = createVPC({
     natGateways: 1,
   },
 });
+
 
 // Construct RedisStack
 createCache({
@@ -137,11 +138,11 @@ createECSStack({
   props: APP.props,
   vpc,
   cluster,
-  stackName: RUBY_DRONE_STACK.name,
-  containers: RUBY_DRONE_STACK.containers,
-  dns: RUBY_DRONE_STACK.dns,
-  alb: RUBY_DRONE_STACK.alb,
-  tags: RUBY_DRONE_STACK.tags,
+  stackName: RDRONE_STACK.name,
+  containers: RDRONE_STACK.containers,
+  dns: RDRONE_STACK.dns,
+  alb: RDRONE_STACK.alb,
+  tags: RDRONE_STACK.tags,
 });
 
 APP.cdk.synth();

@@ -26,6 +26,23 @@ const createTaskRole = ({
     })
   );
 
+  role.addToPolicy(
+      new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          resources: ["*"],
+          actions: [
+              "sns:Subscribe",
+              "sns:Publish",
+              "sns:RemovePermission",
+              "sns:SetTopicAttributes",
+              "sns:DeleteTopic",
+              "sns:ListSubscriptionsByTopic",
+              "sns:GetTopicAttributes",
+              "sns:AddPermission"
+          ],
+      })
+  );
+
   return role;
 };
 

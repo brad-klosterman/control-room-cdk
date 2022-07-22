@@ -72,7 +72,7 @@ export const SUBSCRIPTIONS_STACK: IECStack = {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
         APOLLO_KEY: apolloKey,
-        APOLLO_GRAPH_VARIANT: environment,
+        APOLLO_GRAPH_VARIANT: "SEON@" + environment,
         HOST_PORT: "5000",
         GATEWAY_ENDPOINT: `https://${environment}.seon-gateway.com`,
         REDIS_HOST_ADDRESS: redisUrl,
@@ -235,7 +235,7 @@ export const RTC_STACK: IECStack = {
   tags: [{ name: "ECS_RTC" + environment, value: "rtc-" + environment }],
 };
 
-export const RUBY_DRONE_STACK: IECStack = {
+export const RDRONE_STACK: IECStack = {
   name: APP.name + "RDRONE",
   containers: [
     {
@@ -244,10 +244,17 @@ export const RUBY_DRONE_STACK: IECStack = {
       healthCheck: "/health-check",
       branch: environment === "prod" ? "main" : environment,
       containerPort: 3000,
+      is_docker_compose: true,
       conditions: [loadBalancerV2.ListenerCondition.pathPatterns(["/*"])],
       environment: {
         APP_ENVIRONMENT: environment,
         NODE_ENV: environment,
+        RAILS_ENV: "production",
+        SECRET_KEY_BASE: '3e22395e3574d2e7060098f8132fd977d7f6f243178eca15fa688704b36a325539fc3fd95796068031511c4785bf6c8668d600b2e323be742fafd8e2870c2e09',
+        POSTGRES_HOST: 'ec2-176-34-99-96.eu-west-1.compute.amazonaws.com',
+        POSTGRES_DB: "d117iner0lefb",
+        POSTGRES_USER: "u112csei54os7n",
+        POSTGRES_PASS: "p16777a0c4f592db1a206d9094369ae35496d036bac4bca303a84585a4839b44b",
         APOLLO_KEY: apolloKey,
         APOLLO_GRAPH_REF: "SEON@" + environment,
         HOST_PORT: "3000",
@@ -268,5 +275,5 @@ export const RUBY_DRONE_STACK: IECStack = {
     protocol: "HTTP",
     instanceCount: environment === "prod" ? 2 : 1,
   },
-  tags: [{ name: "ECS_RDRONE" + environment, value: "rdrone-" + environment }],
+  tags: [{ name: "ECS_DRONE" + environment, value: "rdrone-" + environment }],
 };

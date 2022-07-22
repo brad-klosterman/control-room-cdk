@@ -17,6 +17,7 @@ export interface IContainerProperties {
   id: string;
   // The container port
   containerPort: number;
+  is_docker_compose?: boolean;
   // Name of GitHub repo
   repo: string;
   branch: string;

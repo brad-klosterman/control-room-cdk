@@ -48,8 +48,6 @@ const createECSStack = ({
 }) => {
   const stack = new cdk.Stack(scope, stackName, props);
 
-  tags && tags.forEach((tag) => cdk.Tags.of(stack).add(tag.name, tag.value));
-
   const certificate = acm.Certificate.fromCertificateArn(
     stack,
     stackName + "Certificate",
@@ -100,6 +98,8 @@ const createECSStack = ({
   new cdk.CfnOutput(stack, stackName + "PUBLIC-DNS", {
     value: `${URL}`,
   });
+
+  tags && tags.forEach((tag) => cdk.Tags.of(stack).add(tag.name, tag.value));
 
   return stack;
 };
