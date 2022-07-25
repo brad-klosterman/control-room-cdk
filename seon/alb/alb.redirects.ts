@@ -1,6 +1,6 @@
-import * as cdk from '@aws-cdk/core';
-import * as loadBalancerV2 from '@aws-cdk/aws-elasticloadbalancingv2';
-import * as ec2 from '@aws-cdk/aws-ec2';
+import * as cdk from 'aws-cdk-lib';
+import * as loadBalancerV2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 
 export const createHTTPSRedirect = (
     name: string,

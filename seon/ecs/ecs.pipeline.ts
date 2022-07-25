@@ -1,7 +1,7 @@
-import * as cdk from '@aws-cdk/core';
-import * as ecs from '@aws-cdk/aws-ecs';
-import * as codepipeline from '@aws-cdk/aws-codepipeline';
-import * as actions from '@aws-cdk/aws-codepipeline-actions';
+import * as cdk from 'aws-cdk-lib';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as actions from 'aws-cdk-lib/aws-codepipeline-actions';
 
 import { PipelineActions, SourcedContainer } from './ecs.interfaces';
 import configureBuild from './ecs.build';
@@ -10,11 +10,13 @@ const configurePipeline = ({
     stack,
     cluster,
     service,
+    service_name,
     sourced_containers,
 }: {
     stack: cdk.Stack;
     cluster: ecs.Cluster;
     service: ecs.IBaseService;
+    service_name: string;
     sourced_containers: SourcedContainer[];
 }) => {
     // Construct the build action source/build
@@ -67,7 +69,7 @@ const configurePipeline = ({
         actionName: 'Manual_Approve',
     });
 
-    new codepipeline.Pipeline(stack, `${service.serviceName}-PIPELINE`, {
+    new codepipeline.Pipeline(stack, `${service_name}-PIPELINE`, {
         pipelineName: `${service.serviceName}-PIPELINE`,
         crossAccountKeys: true,
         stages: [

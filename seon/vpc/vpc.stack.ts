@@ -1,5 +1,5 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
+import * as cdk from 'aws-cdk-lib';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 export const createVPCStack = ({
     scope,
@@ -16,7 +16,7 @@ export const createVPCStack = ({
     natGateways: number;
     name: string;
 }) => {
-    const stack = new cdk.Stack(scope, name + '_STACK', app_props);
+    const stack = new cdk.Stack(scope, name + '-STACK', app_props);
 
     const vpc = new ec2.Vpc(stack, name, {
         vpcName: name,

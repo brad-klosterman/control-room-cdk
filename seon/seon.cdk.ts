@@ -19,7 +19,7 @@ const { vpc } = createVPCStack({
     maxAzs: 3,
     cidr: '10.0.0.0/16',
     natGateways: 1,
-    name: APP.name + '_VPC',
+    name: APP.name + '-VPC',
 });
 
 /*
@@ -31,7 +31,7 @@ const { vpc } = createVPCStack({
 const { cluster } = createECSClusterStack({
     scope: APP.cdk,
     app_props: APP.props,
-    name: APP.name + '_ECSCluster',
+    name: APP.name + '-ECSCluster',
     vpc,
 });
 

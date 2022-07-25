@@ -1,4 +1,4 @@
-import * as cdk from '@aws-cdk/core';
+import * as cdk from 'aws-cdk-lib';
 import { ServiceConfig } from './seon.app.interfaces';
 const app = new cdk.App();
 const ENVIRONMENT = app.node.tryGetContext('environment');
@@ -11,7 +11,7 @@ if (ENVIRONMENT === undefined) {
 
 export const APP = {
     cdk: app,
-    name: 'SEON_' + ENVIRONMENT,
+    name: 'SEON' + ENVIRONMENT,
     stage: ENVIRONMENT,
     props: {
         env: {
@@ -35,7 +35,7 @@ const APOLLO_GRAPH_REF = 'SEON@' + ENVIRONMENT;
  */
 
 export const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
-    name: APP.name + '_FEDERATION',
+    name: APP.name + '-FEDERATION',
     sub_domain: 'federation.' + ENVIRONMENT + '.' + DOMAIN_NAME,
     service_params: {
         desiredCount: 1,
@@ -66,11 +66,11 @@ export const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
 };
 
 const SUBSCRIPTIONS_SERVICE_CONFIG = {
-    name: APP.name + '_SUBSCRIPTIONS',
+    name: APP.name + '-SUBSCRIPTIONS',
 };
 
 const ALARMS_SERVICE_CONFIG = {
-    name: APP.name + '_ALARMS',
+    name: APP.name + '-ALARMS',
 };
 
 const SSP_SERVICE_CONFIG = {

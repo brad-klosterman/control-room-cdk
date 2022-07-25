@@ -1,4 +1,5 @@
-import { FargateTaskDefinitionProps } from '@aws-cdk/aws-ecs/lib/fargate/fargate-task-definition';
+import { FargateTaskDefinitionProps } from 'aws-cdk-lib/aws-ecs';
+
 
 export interface ContainerEnvironment {
     APP_ENVIRONMENT: 'development' | 'staging' | 'production';

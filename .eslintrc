@@ -1,0 +1,186 @@
+{
+  "root": true,
+  "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": "./"
+      }
+    }
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.lint.json"
+  },
+  "extends": [
+    //"@react-native-community",
+    "airbnb-typescript/base",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:jest/recommended",
+    "prettier"
+  ],
+  "plugins": [
+    "sort-destructure-keys",
+    "sort-keys-fix",
+    "typescript-sort-keys",
+    "@typescript-eslint",
+    "import",
+    "prettier"
+  ],
+  "ignorePatterns": [
+    "*.js",
+    "coverage",
+    "dist",
+    "generated.ts"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "import/extensions": "off",
+    "arrow-body-style": "off",
+    "arrow-parens": ["error", "as-needed"],
+    "import/no-named-export": "off",
+    "linebreak-style": ["warn", "unix"],
+    "@typescript-eslint/naming-convention": "off",
+    "object-curly-newline": [
+      "error",
+      {
+        "consistent": true
+      }
+    ],
+    "import/order": [
+      "warn",
+      {
+        "groups": [
+          "builtin",
+          "external",
+          "internal",
+          ["sibling", "parent"],
+          "index"
+        ],
+        "newlines-between": "always",
+        "alphabetize": { "order": "asc", "caseInsensitive": true }
+      }
+    ],
+    "padding-line-between-statements": [
+      "error",
+      {
+        "blankLine": "always",
+        "next": "*",
+        "prev": [
+          "block",
+          "block-like",
+          "class",
+          "directive",
+          "for",
+          "function",
+          "iife",
+          "multiline-block-like",
+          "multiline-const",
+          "multiline-expression",
+          "multiline-let",
+          "multiline-var",
+          "switch",
+          "throw",
+          "try"
+        ]
+      },
+      {
+        "blankLine": "always",
+        "next": [
+          "block",
+          "block-like",
+          "class",
+          "directive",
+          "for",
+          "function",
+          "iife",
+          "multiline-block-like",
+          "multiline-const",
+          "multiline-expression",
+          "multiline-let",
+          "multiline-var",
+          "switch",
+          "try"
+        ],
+        "prev": "*"
+      },
+      {
+        "blankLine": "never",
+        "next": "*",
+        "prev": ["case", "default", "return"]
+      }
+    ],
+    "sort-destructure-keys/sort-destructure-keys": [
+      "error",
+      {
+        "caseSensitive": false
+      }
+    ],
+    "sort-imports": [
+      "error",
+      {
+        "ignoreCase": true,
+        "ignoreDeclarationSort": true,
+        "ignoreMemberSort": false
+      }
+    ],
+    "sort-keys-fix/sort-keys-fix": [
+      "error",
+      "asc",
+      {
+        "caseSensitive": false,
+        "natural": true
+      }
+    ],
+
+    "import/prefer-default-export": "off",
+    "import/no-extraneous-dependencies": [
+      "warn",
+      {
+        "devDependencies": ["**/*.spec.*", "**/*.test.*"]
+      }
+    ],
+    "prettier/prettier": [
+      "warn",
+      {
+        "arrowParens": "avoid",
+        "bracketSpacing": true,
+        "embeddedLanguageFormatting": "auto",
+        "endOfLine": "lf",
+        "insertPragma": false,
+        "jsxBracketSameLine": false,
+        "jsxSingleQuote": false,
+        "printWidth": 100,
+        "proseWrap": "preserve",
+        "quoteProps": "as-needed",
+        "semi": true,
+        "singleQuote": true,
+        "tabWidth": 4,
+        "trailingComma": "all",
+        "useTabs": false
+      }
+    ],
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "typescript-sort-keys/interface": [
+      "error",
+      "asc",
+      {
+        "caseSensitive": false,
+        "natural": true,
+        "requiredFirst": false
+      }
+    ],
+    "typescript-sort-keys/string-enum": [
+      "error",
+      "asc",
+      {
+        "caseSensitive": false,
+        "natural": true
+      }
+    ]
+  }
+}

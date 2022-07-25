@@ -1,7 +1,7 @@
-import * as cdk from '@aws-cdk/core';
-import * as ecs from '@aws-cdk/aws-ecs';
-import * as iam from '@aws-cdk/aws-iam';
-import * as codebuild from '@aws-cdk/aws-codebuild';
+import * as cdk from 'aws-cdk-lib';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import { SourcedContainer } from './ecs.interfaces';
 
 const configureBuild = ({
@@ -13,8 +13,8 @@ const configureBuild = ({
     cluster: ecs.Cluster;
     container: SourcedContainer;
 }) => {
-    const project = new codebuild.Project(stack, container.name + '_DOCKER-BUILD', {
-        projectName: container.name + '_DOCKER-BUILD',
+    const project = new codebuild.Project(stack, container.name + '-DOCKER-BUILD', {
+        projectName: container.name + '-DOCKER-BUILD',
         environment: {
             buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_2,
             computeType: codebuild.ComputeType.LARGE,

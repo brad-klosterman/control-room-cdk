@@ -1,6 +1,6 @@
 import { TaskDefContainer } from '../seon.app.interfaces';
-import * as codepipeline from '@aws-cdk/aws-codepipeline';
-import * as ecr from "@aws-cdk/aws-ecr";
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as ecr from "aws-cdk-lib/aws-ecr";
 
 export interface SourcedContainer extends TaskDefContainer {
     ecr: ecr.IRepository;

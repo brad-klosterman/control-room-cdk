@@ -1,6 +1,6 @@
-import * as cdk from '@aws-cdk/core';
-import * as ecs from '@aws-cdk/aws-ecs';
-import * as ecr from '@aws-cdk/aws-ecr';
+import * as cdk from 'aws-cdk-lib';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 export const sourceECR = ({ stack, ecr_name }: { stack: cdk.Stack; ecr_name: string }) => {
     let ecr_repo: ecr.IRepository;

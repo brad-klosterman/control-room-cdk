@@ -10,48 +10,51 @@
     "deploy-cdk": "cdk deploy -c certificateIdentifier=0f94ef5b-01ac-4794-a999-8368578ec3d4 -c environment=dev -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
     "deploy-ssp": "cdk deploy -c certificateIdentifier=0f94ef5b-01ac-4794-a999-8368578ec3d4 -c environment=dev -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon SEONdevSSP",
     "synth-stage": "cdk synth -c redisUrl=sesnet0p3iwk0a5.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificateIdentifier=6a5f7ab1-56fe-4096-a8b5-fd90fca63968 -c environment=stage -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
+    "synth-development": "cdk synth -c redisUrl=sesnet0p3iwk0a5.s1azzv.ng.0001.euc1.cache.amazonaws.com -c environment=development -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
     "deploy-stage": "cdk deploy -c redisUrl=sesnet0p3iwk0a5.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificateIdentifier=6a5f7ab1-56fe-4096-a8b5-fd90fca63968 -c environment=stage -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
     "deploy-prod": "cdk deploy -c redisUrl=ses1g1973xyi75d8.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificateIdentifier=8cca5a24-6b7f-4932-a679-3580030fda1c -c environment=prod -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all"
   },
   "engines": {
-    "node": "^16.3.0"
+    "node": "16.13.2"
+  },
+  "resolutions": {
+    "typescript": "4.7.4"
   },
   "devDependencies": {
-    "@types/jest": "^28.1.5",
-    "@types/node": "18.0.4",
-    "@typescript-eslint/eslint-plugin": "^5.30.6",
-    "aws-cdk": "2.31.2",
-    "eslint": "^8.19.0",
-    "eslint-config-prettier": "^8.5.0",
+    "aws-cdk": "*",
     "jest": "^28.1.3",
-    "prettier": "^2.7.1",
-    "ts-jest": "^28.0.6",
+    "ts-jest": "^28.0.7",
     "ts-node": "^10.9.1",
-    "typescript": "~4.7.4",
-    "typescript-eslint": "^0.0.1-alpha.0"
+    "typescript": "4.7.4",
+    "prettier": "^2.7.1",
+    "stylelint": "^14.9.1",
+    "stylelint-order": "^5.0.0",
+    "stylelint-prettier": "^2.0.0",
+    "@types/i18n-js": "^3.8.2",
+    "@types/node": "^18.0.6",
+    "@typescript-eslint/eslint-plugin": "^5.30.7",
+    "@typescript-eslint/parser": "^5.30.7",
+    "eslint": "^8.20.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-typescript": "^3.3.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jest": "^26.6.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-sort-destructure-keys": "^1.4.0",
+    "eslint-plugin-sort-keys-fix": "^1.1.2",
+    "eslint-plugin-typescript-sort-keys": "^2.1.0"
+  },
+  "peerDependencies": {
+    "aws-cdk-lib": "^2.0.0",
+    "constructs": "^10.1.53"
   },
   "dependencies": {
-    "@aws-cdk/assert": "2.31.2",
-    "@aws-cdk/aws-certificatemanager": "1.163.2",
-    "@aws-cdk/aws-cloudwatch-actions": "1.163.2",
-    "@aws-cdk/aws-codedeploy": "1.163.2",
-    "@aws-cdk/aws-codepipeline-actions": "1.163.2",
-    "@aws-cdk/aws-dynamodb": "1.163.2",
-    "@aws-cdk/aws-ec2": "1.163.2",
-    "@aws-cdk/aws-ecr": "1.163.2",
-    "@aws-cdk/aws-ecs": "1.163.2",
-    "@aws-cdk/aws-ecs-patterns": "1.163.2",
-    "@aws-cdk/aws-elasticache": "1.163.2",
-    "@aws-cdk/aws-rds": "^1.163.2",
-    "@aws-cdk/aws-route53": "1.163.2",
-    "@aws-cdk/aws-route53-targets": "1.163.2",
-    "@aws-cdk/aws-secretsmanager": "^1.163.2",
-    "@aws-cdk/aws-ses": "1.163.2",
-    "@aws-cdk/aws-sns-subscriptions": "^1.163.2",
-    "@aws-cdk/core": "1.163.2",
-    "constructs": "^10.1.45",
-    "env-var": "7.1.1",
-    "openvpn": "^0.1.5",
-    "source-map-support": "^0.5.21"
+    "aws-cdk-lib": "^2.0.0",
+    "constructs": "^10.1.53",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.1",
+    "nodemon": "^2.0.19"
   }
 }
