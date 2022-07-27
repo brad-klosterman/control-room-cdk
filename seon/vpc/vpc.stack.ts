@@ -1,5 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { putParameter } from '../constructs/ssm.parameters';
+
 
 export const createVPCStack = ({
     scope,
@@ -16,13 +18,19 @@ export const createVPCStack = ({
     natGateways: number;
     name: string;
 }) => {
-    const stack = new cdk.Stack(scope, name + '-STACK', app_props);
+    const stack = new cdk.Stack(scope, name, app_props);
 
     const vpc = new ec2.Vpc(stack, name, {
         vpcName: name,
         maxAzs,
         cidr,
         natGateways,
+    });
+
+    putParameter({
+        stack,
+        param_key: name + "-NS",
+        param_value: name,
     });
 
     return {

@@ -36,7 +36,7 @@ export const createECSServiceStack = ({
     task_params: FargateTaskDefinitionProps;
     service_params: ServiceParams;
 }) => {
-    const stack = new cdk.Stack(scope, service_name + '-STACK', app_props);
+    const stack = new cdk.Stack(scope, service_name, app_props);
 
     const task_definition = new ecs.FargateTaskDefinition(stack, service_name + '-TASKDEF', {
         family: service_name + '-TASKDEF',

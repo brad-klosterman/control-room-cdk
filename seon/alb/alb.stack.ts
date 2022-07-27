@@ -19,7 +19,7 @@ export const createALBStack = ({
     app_name: string;
     vpc: ec2.IVpc;
 }) => {
-    const stack = new cdk.Stack(scope, app_name + '-ALB-STACK', app_props);
+    const stack = new cdk.Stack(scope, app_name + '-LOADBALANCER', app_props);
 
     const zone = route53.HostedZone.fromLookup(stack, app_name + '-ALB53-ZONE', {
         domainName: domain_name,

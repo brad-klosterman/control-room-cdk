@@ -70,7 +70,7 @@ const configurePipeline = ({
     });
 
     new codepipeline.Pipeline(stack, `${service_name}-PIPELINE`, {
-        pipelineName: `${service.serviceName}-PIPELINE`,
+        pipelineName: `${service.serviceName}`,
         crossAccountKeys: true,
         stages: [
             {

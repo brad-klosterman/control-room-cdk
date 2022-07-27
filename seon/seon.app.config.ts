@@ -1,6 +1,6 @@
-import * as cdk from 'aws-cdk-lib';
+import { App } from 'aws-cdk-lib';
 import { ServiceConfig } from './seon.app.interfaces';
-const app = new cdk.App();
+const app = new App();
 const ENVIRONMENT = app.node.tryGetContext('environment');
 const REDIS_HOST_ADDRESS = app.node.tryGetContext('redis_url');
 const APOLLO_KEY = app.node.tryGetContext('apollo_key');
@@ -65,22 +65,134 @@ export const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     ],
 };
 
-const SUBSCRIPTIONS_SERVICE_CONFIG = {
+export const SUBSCRIPTIONS_SERVICE_CONFIG = {
     name: APP.name + '-SUBSCRIPTIONS',
+    sub_domain: 'subscriptions.' + ENVIRONMENT + '.' + DOMAIN_NAME,
+    service_params: {
+        desiredCount: 1,
+        minHealthyPercent: 100,
+        maxHealthyPercent: 200,
+    },
+    task_params: {
+        cpu: 1024,
+        memoryLimitMiB: 2048,
+    },
+    containers: [
+        {
+            name: APP.name + '_SUBSCRIPTIONS_' + 'APOLLO',
+            repo: "seon-gateway-events",
+            branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
+            health_check_url: '/',
+            environment: {
+                APP_ENVIRONMENT: ENVIRONMENT,
+                NODE_ENV: ENVIRONMENT,
+                APOLLO_KEY,
+                APOLLO_GRAPH_REF,
+                HOST_PORT: '5000',
+                REDIS_HOST_ADDRESS,
+                SEON_RESTAPI_BASEURL,
+                GATEWAY_ENDPOINT: `https://federation.${ENVIRONMENT}.seon-gateway.com`,
+            },
+        },
+    ],
 };
 
-const ALARMS_SERVICE_CONFIG = {
+export const ALARMS_SERVICE_CONFIG = {
     name: APP.name + '-ALARMS',
+    sub_domain: 'alarms.' + ENVIRONMENT + '.' + DOMAIN_NAME,
+    service_params: {
+        desiredCount: 1,
+        minHealthyPercent: 100,
+        maxHealthyPercent: 200,
+    },
+    task_params: {
+        cpu: 1024,
+        memoryLimitMiB: 2048,
+    },
+    containers: [
+        {
+            name: APP.name + '_ALARMS_' + 'APOLLO',
+            repo: "seon-alarms-graph",
+            branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
+            health_check_url: '/.well-known/apollo/server-health',
+            environment: {
+                APP_ENVIRONMENT: ENVIRONMENT,
+                NODE_ENV: ENVIRONMENT,
+                APOLLO_KEY,
+                APOLLO_GRAPH_REF,
+                HOST_PORT: '4000',
+                REDIS_HOST_ADDRESS,
+                SEON_RESTAPI_BASEURL,
+                GATEWAY_ENDPOINT: `https://federation.${ENVIRONMENT}.seon-gateway.com`,
+            },
+        },
+    ],
 };
 
-const SSP_SERVICE_CONFIG = {
-    name: APP.name + '_SSP',
+export const SSP_SERVICE_CONFIG = {
+    name: APP.name + '-SSP',
+    sub_domain: 'ssp.' + ENVIRONMENT + '.' + DOMAIN_NAME,
+    service_params: {
+        desiredCount: 1,
+        minHealthyPercent: 100,
+        maxHealthyPercent: 200,
+    },
+    task_params: {
+        cpu: 1024,
+        memoryLimitMiB: 2048,
+    },
+    containers: [
+        {
+            name: APP.name + '_SSP_' + 'APOLLO',
+            repo: "seon-ssp-customers-graph",
+            branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
+            health_check_url: '/.well-known/apollo/server-health',
+            environment: {
+                APP_ENVIRONMENT: ENVIRONMENT,
+                NODE_ENV: ENVIRONMENT,
+                APOLLO_KEY,
+                APOLLO_GRAPH_REF,
+                HOST_PORT: '4000',
+                REDIS_HOST_ADDRESS,
+                SEON_RESTAPI_BASEURL,
+                GATEWAY_ENDPOINT: `https://federation.${ENVIRONMENT}.seon-gateway.com`,
+            },
+        },
+    ],
 };
 
-const WORKFORCE_SERVICE_CONFIG = {
-    name: APP.name + '_WORKFORCE',
+export const WORKFORCE_SERVICE_CONFIG = {
+    name: APP.name + '-WORKFORCE',
+    sub_domain: 'workforce.' + ENVIRONMENT + '.' + DOMAIN_NAME,
+    service_params: {
+        desiredCount: 1,
+        minHealthyPercent: 100,
+        maxHealthyPercent: 200,
+    },
+    task_params: {
+        cpu: 1024,
+        memoryLimitMiB: 2048,
+    },
+    containers: [
+        {
+            name: APP.name + 'WORKFORCE' + 'APOLLO',
+            repo: "seon-workforce-graph",
+            branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
+            health_check_url: '/.well-known/apollo/server-health',
+            environment: {
+                APP_ENVIRONMENT: ENVIRONMENT,
+                NODE_ENV: ENVIRONMENT,
+                APOLLO_KEY,
+                APOLLO_GRAPH_REF,
+                HOST_PORT: '4000',
+                REDIS_HOST_ADDRESS,
+                SEON_RESTAPI_BASEURL,
+                GATEWAY_ENDPOINT: `https://federation.${ENVIRONMENT}.seon-gateway.com`,
+            },
+        },
+    ],
 };
 
-const RTC_SERVICE_CONFIG = {
+export const RTC_SERVICE_CONFIG = {
     name: APP.name + '_RTC',
 };
