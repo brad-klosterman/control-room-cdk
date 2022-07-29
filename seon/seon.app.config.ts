@@ -22,6 +22,8 @@ export const APP = {
     },
 };
 
+export const certificate_identifier = app.node.tryGetContext("certificate_identifier");
+
 export const DOMAIN_NAME = 'seon-gateway.com';
 
 const SEON_RESTAPI_BASEURL =
@@ -38,6 +40,7 @@ export const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     name: APP.name + '-FEDERATION',
     sub_domain: 'federation.' + ENVIRONMENT + '.' + DOMAIN_NAME,
     service_params: {
+        priority: 1,
         desiredCount: 1,
         minHealthyPercent: 100,
         maxHealthyPercent: 200,
@@ -48,7 +51,7 @@ export const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     },
     containers: [
         {
-            name: APP.name + '_FEDERATION_' + 'APOLLO',
+            name: APP.name.toLowerCase() + '-federation-' + 'apollo',
             repo: "seon-federation-gateway",
             branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
             health_check_url: '/.well-known/apollo/server-health',
@@ -69,6 +72,7 @@ export const SUBSCRIPTIONS_SERVICE_CONFIG = {
     name: APP.name + '-SUBSCRIPTIONS',
     sub_domain: 'subscriptions.' + ENVIRONMENT + '.' + DOMAIN_NAME,
     service_params: {
+        priority: 2,
         desiredCount: 1,
         minHealthyPercent: 100,
         maxHealthyPercent: 200,
@@ -79,7 +83,7 @@ export const SUBSCRIPTIONS_SERVICE_CONFIG = {
     },
     containers: [
         {
-            name: APP.name + '_SUBSCRIPTIONS_' + 'APOLLO',
+            name: APP.name.toLowerCase() + '-subscriptions-' + 'apollo',
             repo: "seon-gateway-events",
             branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
             health_check_url: '/',
@@ -101,6 +105,7 @@ export const ALARMS_SERVICE_CONFIG = {
     name: APP.name + '-ALARMS',
     sub_domain: 'alarms.' + ENVIRONMENT + '.' + DOMAIN_NAME,
     service_params: {
+        priority: 3,
         desiredCount: 1,
         minHealthyPercent: 100,
         maxHealthyPercent: 200,
@@ -111,7 +116,7 @@ export const ALARMS_SERVICE_CONFIG = {
     },
     containers: [
         {
-            name: APP.name + '_ALARMS_' + 'APOLLO',
+            name: APP.name.toLowerCase() + '-alarms-' + 'apollo',
             repo: "seon-alarms-graph",
             branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
             health_check_url: '/.well-known/apollo/server-health',
@@ -133,6 +138,7 @@ export const SSP_SERVICE_CONFIG = {
     name: APP.name + '-SSP',
     sub_domain: 'ssp.' + ENVIRONMENT + '.' + DOMAIN_NAME,
     service_params: {
+        priority: 4,
         desiredCount: 1,
         minHealthyPercent: 100,
         maxHealthyPercent: 200,
@@ -143,7 +149,7 @@ export const SSP_SERVICE_CONFIG = {
     },
     containers: [
         {
-            name: APP.name + '_SSP_' + 'APOLLO',
+            name: APP.name.toLowerCase() + '-ssp-' + 'apollo',
             repo: "seon-ssp-customers-graph",
             branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
             health_check_url: '/.well-known/apollo/server-health',
@@ -165,6 +171,7 @@ export const WORKFORCE_SERVICE_CONFIG = {
     name: APP.name + '-WORKFORCE',
     sub_domain: 'workforce.' + ENVIRONMENT + '.' + DOMAIN_NAME,
     service_params: {
+        priority: 5,
         desiredCount: 1,
         minHealthyPercent: 100,
         maxHealthyPercent: 200,
@@ -175,7 +182,7 @@ export const WORKFORCE_SERVICE_CONFIG = {
     },
     containers: [
         {
-            name: APP.name + 'WORKFORCE' + 'APOLLO',
+            name: APP.name.toLowerCase() + '-workforce-' + 'apollo',
             repo: "seon-workforce-graph",
             branch: ENVIRONMENT === "production" ? "main" : ENVIRONMENT,
             health_check_url: '/.well-known/apollo/server-health',

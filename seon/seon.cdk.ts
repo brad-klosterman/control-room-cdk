@@ -49,7 +49,7 @@ const { cluster } = createECSClusterStack({
  *
  */
 
-const { alb, https_listener, zone } = createALBStack({
+const { alb, https_listener, zone, services_target_group } = createALBStack({
     scope: APP.cdk,
     app_props: APP.props,
     app_name: APP.name,
@@ -98,6 +98,7 @@ createECSServiceStack({
     containers: FEDERATION_SERVICE_CONFIG.containers,
     task_params: FEDERATION_SERVICE_CONFIG.task_params,
     service_params: FEDERATION_SERVICE_CONFIG.service_params,
+    services_target_group,
     alb,
     zone,
 });

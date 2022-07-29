@@ -12,6 +12,7 @@ export interface ContainerEnvironment {
 }
 
 export interface ServiceParams {
+    priority: number;
     desiredCount: number;
     minHealthyPercent: number;
     maxHealthyPercent: number;

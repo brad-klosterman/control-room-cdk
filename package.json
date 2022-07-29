@@ -8,7 +8,7 @@
     "cdk": "cdk",
     "open-redis": "sudo openvpn --config ./scripts/cert/client-config.ovpn",
     "synth-development": "cdk bootstrap -c redis_url=sesxkxhwjy7uk1t.s1azzv.ng.0001.euc1.cache.amazonaws.com -c environment=development -c apollo_key=service:SEON:mMJVKJ8jbZVbyx39tybPqg --require-approval never --profile seon --all",
-    "deploy-development": "cdk deploy -c redis_url=sesxkxhwjy7uk1t.s1azzv.ng.0001.euc1.cache.amazonaws.com -c environment=development -c apollo_key=service:SEON:mMJVKJ8jbZVbyx39tybPqg --require-approval never --profile seon --all",
+    "deploy-development": "cdk deploy -c redis_url=sesxkxhwjy7uk1t.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificate_identifier=b70bf9cb-9c24-4d38-9519-2ba206f23654 -c environment=development -c apollo_key=service:SEON:mMJVKJ8jbZVbyx39tybPqg --require-approval never --profile seon --all",
     "synth-stage": "cdk synth -c redisUrl=sesnet0p3iwk0a5.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificateIdentifier=6a5f7ab1-56fe-4096-a8b5-fd90fca63968 -c environment=stage -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
     "deploy-stage": "cdk deploy -c redisUrl=sesnet0p3iwk0a5.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificateIdentifier=6a5f7ab1-56fe-4096-a8b5-fd90fca63968 -c environment=stage -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
     "deploy-prod": "cdk deploy -c redisUrl=ses1g1973xyi75d8.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificateIdentifier=8cca5a24-6b7f-4932-a679-3580030fda1c -c environment=prod -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all"

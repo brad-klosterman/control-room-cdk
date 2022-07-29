@@ -1,5 +1,4 @@
 import * as cdk from 'aws-cdk-lib';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 export const sourceECR = ({ stack, ecr_name }: { stack: cdk.Stack; ecr_name: string }) => {

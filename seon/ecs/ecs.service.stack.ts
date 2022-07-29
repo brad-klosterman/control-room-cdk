@@ -11,6 +11,11 @@ import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import { sourceECR } from './ecr';
 import configurePipeline from './ecs.pipeline';
 
+/*
+ *
+ * https://docs.aws.amazon.com/cdk/api/v1/docs/aws-ecs-readme.html
+ */
+
 export const createECSServiceStack = ({
     scope,
     app_props,
@@ -23,6 +28,7 @@ export const createECSServiceStack = ({
     containers,
     task_params,
     service_params,
+    services_target_group,
 }: {
     scope: cdk.App;
     app_props: cdk.StackProps;
@@ -35,6 +41,7 @@ export const createECSServiceStack = ({
     containers: TaskDefContainer[];
     task_params: FargateTaskDefinitionProps;
     service_params: ServiceParams;
+    services_target_group: loadBalancerV2.ApplicationTargetGroup;
 }) => {
     const stack = new cdk.Stack(scope, service_name, app_props);
 
@@ -61,6 +68,8 @@ export const createECSServiceStack = ({
         minHealthyPercent: service_params.minHealthyPercent,
         maxHealthyPercent: service_params.maxHealthyPercent,
         taskDefinition: task_definition,
+        circuitBreaker: { rollback: true },
+        // cloudMapOptions
         capacityProviderStrategies: [
             {
                 capacityProvider: 'FARGATE_SPOT',
@@ -68,15 +77,31 @@ export const createECSServiceStack = ({
             },
             {
                 capacityProvider: 'FARGATE',
+                base: 1,
                 weight: 1,
             },
         ],
     });
 
+
+
+
+    
+
+    // Load balance incoming requests to this service target
+    const service_target_group = https_listener.addTargets(service_name + '-TG', {
+        targetGroupName: service_name + '-TG',
+        priority: service_params.priority,
+        conditions: [loadBalancerV2.ListenerCondition.hostHeaders([sub_domain])],
+        port: 80,
+        targets: [ecs_service],
+    });
+
+    // can add more than one container to the task
     const sourced_containers = containers.map(container => {
         const containerPort = parseInt(container.environment.HOST_PORT);
 
-        const sourced_container = sourceECR({ stack, ecr_name: container.name + '-ECR' });
+        const sourced_container = sourceECR({ stack, ecr_name: container.name + '-ecr' });
 
         task_definition
             .addContainer(container.name, {
@@ -89,24 +114,50 @@ export const createECSServiceStack = ({
                 protocol: ecs.Protocol.TCP,
             });
 
-        https_listener.addTargets(service_name + '-TG', {
-            targetGroupName: service_name + '-TG',
-            priority: 10,
-            conditions: [loadBalancerV2.ListenerCondition.hostHeaders([sub_domain])],
-            port: 80,
-            targets: [
-                ecs_service.loadBalancerTarget({
-                    containerName: container.name,
-                    containerPort,
-                }),
-            ],
-            healthCheck: {
-                interval: cdk.Duration.seconds(300),
-                path: container.health_check_url,
-                port: container.environment.HOST_PORT,
-                timeout: cdk.Duration.seconds(20),
-            },
-        });
+        // Return a load balancing target for this specific container and port.
+        const container_target = ecs_service.loadBalancerTarget({
+            containerName: container.name,
+            containerPort,
+        }); // add to target group
+
+        // https_listener.addTargets(container.name + '-TG', {
+        //     targetGroupName: container.name + '-TG',
+        //     port: 80,
+        //     targets: [
+        //         ecs_service.loadBalancerTarget({
+        //             containerName: container.name,
+        //             containerPort,
+        //         }),
+        //     ],
+        // });
+        //
+        // https_listener.addTargets(service_name + '-TG', {
+        //     targetGroupName: service_name + '-TG',
+        //     priority: 10,
+        //     conditions: [loadBalancerV2.ListenerCondition.hostHeaders([sub_domain])],
+        //     port: 80,
+        //     targets: [
+        //         ecs_service.loadBalancerTarget({
+        //             containerName: container.name,
+        //             containerPort,
+        //         }),
+        //     ],
+        //     healthCheck: {
+        //         interval: cdk.Duration.seconds(300),
+        //         path: container.health_check_url,
+        //         port: container.environment.HOST_PORT,
+        //         timeout: cdk.Duration.seconds(20),
+        //     },
+        // });
+
+        // ecs_service.registerLoadBalancerTargets({
+        //     containerName: 'web',
+        //     containerPort: 80,
+        //     newTargetGroupId: 'ECS',
+        //     listener: ecs.ListenerConfig.applicationListener(https_listener, {
+        //         protocol: ecs.Protocol.TCP,
+        //     }),
+        // });
 
         return {
             ...container,
@@ -120,7 +171,7 @@ export const createECSServiceStack = ({
         service: ecs_service,
         service_name,
         sourced_containers,
-    })
+    });
 
     new route53.ARecord(stack, service_name + `-ALIAS_RECORD_API`, {
         recordName: sub_domain,
