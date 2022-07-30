@@ -13,7 +13,7 @@
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": "./tsconfig.lint.json"
+    "project": "./tsconfig.json"
   },
   "extends": [
     //"@react-native-community",

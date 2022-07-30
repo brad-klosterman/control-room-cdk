@@ -1,19 +1,14 @@
-import * as cdk from "@aws-cdk/core";
-import * as ec2 from "@aws-cdk/aws-ec2";
-import * as ecs from "@aws-cdk/aws-ecs";
-import * as acm from "@aws-cdk/aws-certificatemanager";
-import * as route53 from "@aws-cdk/aws-route53";
-import * as route53targets from "@aws-cdk/aws-route53-targets";
+import * as acm from '@aws-cdk/aws-certificatemanager';
+import * as ec2 from '@aws-cdk/aws-ec2';
+import * as ecs from '@aws-cdk/aws-ecs';
+import * as route53 from '@aws-cdk/aws-route53';
+import * as route53targets from '@aws-cdk/aws-route53-targets';
+import * as cdk from '@aws-cdk/core';
 
-import configureALBServices from "./constructs/configureALBServices";
-import sourceContainerImages from "./constructs/sourceContainerImages";
-import configurePipeline from "./constructs/configurePipeline";
-import {
-  ITag,
-  IDomainProperties,
-  IContainerProperties,
-  IALBProperties,
-} from "./interfaces";
+import configureALBServices from './constructs/configureALBServices';
+import configurePipeline from './constructs/configurePipeline';
+import sourceContainerImages from './constructs/sourceContainerImages';
+import { IALBProperties, IContainerProperties, IDomainProperties, ITag } from './interfaces';
 
 /** Constructs the stack with given properties.
  * @param scope                 The CDK app
@@ -26,82 +21,80 @@ import {
  */
 
 const createECSStack = ({
-  scope,
-  props,
-  vpc,
-  cluster,
-  stackName,
-  containers,
-  dns,
-  alb,
-  tags,
-}: {
-  scope: cdk.App;
-  props: cdk.StackProps;
-  vpc: ec2.IVpc;
-  cluster: ecs.Cluster;
-  stackName: string;
-  containers: IContainerProperties[];
-  dns: IDomainProperties;
-  alb: IALBProperties;
-  tags?: ITag[];
-}) => {
-  const stack = new cdk.Stack(scope, stackName, props);
-
-  const certificate = acm.Certificate.fromCertificateArn(
-    stack,
-    stackName + "Certificate",
-    dns.domainCertificateArn
-  );
-
-  const sourcedContainers = sourceContainerImages(stack, containers);
-
-  const { loadBalancer, services } = configureALBServices(
-    stackName,
-    stack,
-    cluster,
-    certificate,
-    sourcedContainers,
     alb,
-    tags
-  );
-
-  configurePipeline({
-    stack,
-    stackName,
     cluster,
-    services,
-    sourcedContainers,
-  });
+    containers,
+    dns,
+    props,
+    scope,
+    stackName,
+    tags,
+    vpc,
+}: {
+    alb: IALBProperties;
+    cluster: ecs.Cluster;
+    containers: IContainerProperties[];
+    dns: IDomainProperties;
+    props: cdk.StackProps;
+    scope: cdk.App;
+    stackName: string;
+    tags?: ITag[];
+    vpc: ec2.IVpc;
+}) => {
+    const stack = new cdk.Stack(scope, stackName, props);
 
-  const zone = route53.HostedZone.fromLookup(stack, stackName + "ZONE", {
-    domainName: dns.domainName,
-  });
+    const certificate = acm.Certificate.fromCertificateArn(
+        stack,
+        stackName + 'Certificate',
+        dns.domainCertificateArn,
+    );
 
-  const URL = `${dns.subdomainName}.${dns.domainName}`;
+    const sourcedContainers = sourceContainerImages(stack, containers);
 
-  new route53.ARecord(stack, `${URL}ALIAS_RECORD`, {
-    recordName: dns.subdomainName,
-    target: route53.RecordTarget.fromAlias(
-      new route53targets.LoadBalancerTarget(loadBalancer)
-    ),
-    ttl: cdk.Duration.seconds(60),
-    comment: dns.subdomainName + "API DOMAIN",
-    zone: zone,
-  });
+    const { loadBalancer, services } = configureALBServices(
+        stackName,
+        stack,
+        cluster,
+        certificate,
+        sourcedContainers,
+        alb,
+        tags,
+    );
 
-  // Output the DNS name where you can access your service
-  new cdk.CfnOutput(stack, stackName + "ALB-DNS", {
-    value: loadBalancer.loadBalancerDnsName,
-  });
+    configurePipeline({
+        cluster,
+        services,
+        sourcedContainers,
+        stack,
+        stackName,
+    });
 
-  new cdk.CfnOutput(stack, stackName + "PUBLIC-DNS", {
-    value: `${URL}`,
-  });
+    const zone = route53.HostedZone.fromLookup(stack, stackName + 'ZONE', {
+        domainName: dns.domainName,
+    });
 
-  tags && tags.forEach((tag) => cdk.Tags.of(stack).add(tag.name, tag.value));
+    const URL = `${dns.subdomainName}.${dns.domainName}`;
 
-  return stack;
+    new route53.ARecord(stack, `${URL}ALIAS_RECORD`, {
+        comment: dns.subdomainName + 'API DOMAIN',
+        recordName: dns.subdomainName,
+        target: route53.RecordTarget.fromAlias(new route53targets.LoadBalancerTarget(loadBalancer)),
+        ttl: cdk.Duration.seconds(60),
+        zone: zone,
+    });
+
+    // Output the DNS name where you can access your service
+    new cdk.CfnOutput(stack, stackName + 'ALB-DNS', {
+        value: loadBalancer.loadBalancerDnsName,
+    });
+
+    new cdk.CfnOutput(stack, stackName + 'PUBLIC-DNS', {
+        value: `${URL}`,
+    });
+
+    tags && tags.forEach(tag => cdk.Tags.of(stack).add(tag.name, tag.value));
+
+    return stack;
 };
 
 export default createECSStack;

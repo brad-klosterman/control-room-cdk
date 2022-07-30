@@ -1,49 +1,43 @@
-import * as cdk from "@aws-cdk/core";
-import * as iam from "@aws-cdk/aws-iam";
+import * as iam from '@aws-cdk/aws-iam';
+import * as cdk from '@aws-cdk/core';
 
 /**
  * The name of the IAM role that grants containers in the task permission to call AWS APIs on your behalf.
  *
  * @default - A task role is automatically created for you.
  */
-const createTaskRole = ({
-  stack,
-  baseName,
-}: {
-  stack: cdk.Stack;
-  baseName: string;
-}): iam.Role => {
-  const role = new iam.Role(stack, baseName + "TaskRole", {
-    roleName: baseName + "TaskRole",
-    assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-  });
+const createTaskRole = ({ baseName, stack }: { baseName: string; stack: cdk.Stack }): iam.Role => {
+    const role = new iam.Role(stack, baseName + 'TaskRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+        roleName: baseName + 'TaskRole',
+    });
 
-  role.addToPolicy(
-    new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      resources: ["*"],
-      actions: ["dynamodb:Scan", "dynamodb:PutItem"],
-    })
-  );
+    role.addToPolicy(
+        new iam.PolicyStatement({
+            actions: ['dynamodb:Scan', 'dynamodb:PutItem'],
+            effect: iam.Effect.ALLOW,
+            resources: ['*'],
+        }),
+    );
 
-  role.addToPolicy(
-      new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          resources: ["*"],
-          actions: [
-              "sns:Subscribe",
-              "sns:Publish",
-              "sns:RemovePermission",
-              "sns:SetTopicAttributes",
-              "sns:DeleteTopic",
-              "sns:ListSubscriptionsByTopic",
-              "sns:GetTopicAttributes",
-              "sns:AddPermission"
-          ],
-      })
-  );
+    role.addToPolicy(
+        new iam.PolicyStatement({
+            actions: [
+                'sns:Subscribe',
+                'sns:Publish',
+                'sns:RemovePermission',
+                'sns:SetTopicAttributes',
+                'sns:DeleteTopic',
+                'sns:ListSubscriptionsByTopic',
+                'sns:GetTopicAttributes',
+                'sns:AddPermission',
+            ],
+            effect: iam.Effect.ALLOW,
+            resources: ['*'],
+        }),
+    );
 
-  return role;
+    return role;
 };
 
 /**
@@ -54,39 +48,39 @@ const createTaskRole = ({
  * @default - An execution role will be automatically created if you use ECR images in your task definition.
  */
 const configureExecutionRole = ({
-  stack,
-  baseName,
+    baseName,
+    stack,
 }: {
-  stack: cdk.Stack;
-  baseName: string;
+    baseName: string;
+    stack: cdk.Stack;
 }): iam.Role => {
-  const role = new iam.Role(stack, baseName + "ExecutionRole", {
-    roleName: baseName + "ExecutionRole",
-    assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-  });
+    const role = new iam.Role(stack, baseName + 'ExecutionRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+        roleName: baseName + 'ExecutionRole',
+    });
 
-  role.addToPolicy(
-    new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      resources: ["*"],
-      actions: [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-      ],
-    })
-  );
-  
-  role.addToPolicy(
-    new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      resources: ["*"],
-      actions: ["logs:CreateLogStream", "logs:PutLogEvents"],
-    })
-  );
+    role.addToPolicy(
+        new iam.PolicyStatement({
+            actions: [
+                'ecr:GetAuthorizationToken',
+                'ecr:BatchCheckLayerAvailability',
+                'ecr:GetDownloadUrlForLayer',
+                'ecr:BatchGetImage',
+            ],
+            effect: iam.Effect.ALLOW,
+            resources: ['*'],
+        }),
+    );
 
-  return role;
+    role.addToPolicy(
+        new iam.PolicyStatement({
+            actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+            effect: iam.Effect.ALLOW,
+            resources: ['*'],
+        }),
+    );
+
+    return role;
 };
 
 export { configureExecutionRole, createTaskRole };

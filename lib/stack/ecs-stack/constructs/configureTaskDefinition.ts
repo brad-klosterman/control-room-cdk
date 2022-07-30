@@ -1,9 +1,10 @@
-import * as cdk from "@aws-cdk/core";
-import * as ecs from "@aws-cdk/aws-ecs";
-import * as iam from "@aws-cdk/aws-iam";
-import { configureExecutionRole, createTaskRole } from "./configureRoles";
-import { ITag, ISourcedContainer } from "../interfaces";
-import { Effect } from "@aws-cdk/aws-iam";
+import * as ecs from '@aws-cdk/aws-ecs';
+import * as iam from '@aws-cdk/aws-iam';
+import { Effect } from '@aws-cdk/aws-iam';
+import * as cdk from '@aws-cdk/core';
+
+import { ISourcedContainer, ITag } from '../interfaces';
+import { configureExecutionRole, createTaskRole } from './configureRoles';
 
 /** A task definition is required to run Docker containers in Amazon ECS.
  * The Docker image to use with (each) container in your task
@@ -20,52 +21,48 @@ import { Effect } from "@aws-cdk/aws-iam";
  */
 
 const configureTaskDefinition = ({
-  stack,
-  containerProperties: container,
-  tags,
-}: {
-  stack: cdk.Stack;
-  containerProperties: ISourcedContainer;
-  tags?: ITag[];
-}) => {
-  const taskDefinition = new ecs.FargateTaskDefinition(
+    containerProperties: container,
     stack,
-    container.id + "TaskDefinition",
-    {
-      cpu: 1024,
-      memoryLimitMiB: 2048,
-      // executionRole: configureExecutionRole({
-      //   stack,
-      //   baseName: container.id,
-      // }),
-    }
-  );
-
-  taskDefinition
-    .addContainer(`${container.id}Container`, {
-      image: ecs.ContainerImage.fromEcrRepository(container.ecrRepo),
-      // image: ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample"),
-      // memoryLimitMiB: 256,
-      environment: container.environment,
-      logging: new ecs.AwsLogDriver({ streamPrefix: container.id }),
-    })
-    .addPortMappings({
-      containerPort: container.containerPort,
-      protocol: ecs.Protocol.TCP,
+    tags,
+}: {
+    containerProperties: ISourcedContainer;
+    stack: cdk.Stack;
+    tags?: ITag[];
+}) => {
+    const taskDefinition = new ecs.FargateTaskDefinition(stack, container.id + 'TaskDefinition', {
+        cpu: 1024,
+        memoryLimitMiB: 2048,
+        // executionRole: configureExecutionRole({
+        //   stack,
+        //   baseName: container.id,
+        // }),
     });
 
-  taskDefinition.addToTaskRolePolicy(
-    new iam.PolicyStatement({
-      effect: Effect.ALLOW,
-      actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
-      resources: ["*"],
-    })
-  );
+    taskDefinition
+        .addContainer(`${container.id}Container`, {
+            // image: ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample"),
+            // memoryLimitMiB: 256,
+            environment: container.environment,
 
-  tags &&
-    tags.forEach((tag) => cdk.Tags.of(taskDefinition).add(tag.name, tag.value));
+            image: ecs.ContainerImage.fromEcrRepository(container.ecrRepo),
+            logging: new ecs.AwsLogDriver({ streamPrefix: container.id }),
+        })
+        .addPortMappings({
+            containerPort: container.containerPort,
+            protocol: ecs.Protocol.TCP,
+        });
 
-  return taskDefinition;
+    taskDefinition.addToTaskRolePolicy(
+        new iam.PolicyStatement({
+            actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+            effect: Effect.ALLOW,
+            resources: ['*'],
+        }),
+    );
+
+    tags && tags.forEach(tag => cdk.Tags.of(taskDefinition).add(tag.name, tag.value));
+
+    return taskDefinition;
 };
 
 export default configureTaskDefinition;

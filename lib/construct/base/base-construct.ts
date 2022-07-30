@@ -1,24 +1,25 @@
+import * as ssm from '@aws-cdk/aws-ssm';
 import * as cdk from '@aws-cdk/core';
-import * as ssm from '@aws-cdk/aws-ssm'
-
 
 export interface ConstructProps {
-    projectPrefix: string;
-    stackName: string;
-    stackConfig: any;
     appConfig: any;
+    projectPrefix: string;
+    stackConfig: any;
+    stackName: string;
 }
 
 export class BaseConstruct extends cdk.Construct {
     protected stackName: string;
+
     protected stackConfig: any;
+
     protected appConfig: any;
 
     constructor(scope: cdk.Construct, id: string, props: ConstructProps) {
         super(scope, id);
 
         this.stackName = props.stackName;
-        
+
         this.stackConfig = props.stackConfig;
         this.appConfig = props.appConfig;
     }
@@ -26,7 +27,7 @@ export class BaseConstruct extends cdk.Construct {
     protected exportOutput(key: string, value: string) {
         new cdk.CfnOutput(this, `Output-${key}`, {
             exportName: `${this.stackName}-${key}`,
-            value: value
+            value: value,
         });
     }
 
@@ -43,10 +44,7 @@ export class BaseConstruct extends cdk.Construct {
 
     protected getParameter(stackName: string, paramKey: string): string {
         const paramKeyWithPrefix = `${stackName}-${paramKey}`;
-        
-        return ssm.StringParameter.valueForStringParameter(
-            this,
-            paramKeyWithPrefix
-        );
+
+        return ssm.StringParameter.valueForStringParameter(this, paramKeyWithPrefix);
     }
-} 
+}

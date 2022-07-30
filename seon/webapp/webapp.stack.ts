@@ -1,29 +1,44 @@
 import * as cdk from 'aws-cdk-lib';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
-import * as actions from 'aws-cdk-lib/aws-codepipeline-actions';
-import * as codebuild from 'aws-cdk-lib/aws-codebuild';
-import { putParameter } from '../constructs/ssm.parameters';
-import { LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild';
 
-
+import createWebAppPipeline from './webapp.pipeline';
+import createWebAppS3 from './webapp.s3';
 
 export const createWebAppStack = ({
-    scope,
     app_props,
-    name,
-                                      repo,
-    branch
+    branch,
+    domain_name,
+    environment_variables,
+    repo,
+    scope,
+    sub_domain,
+    web_app_name,
 }: {
-    scope: cdk.App;
-    app_props: cdk.StackProps
-    name: string;
-    repo: string;
+    app_props: cdk.StackProps;
     branch: string;
+    domain_name: string;
+    environment_variables: { [key: string]: string };
+    repo: string;
+    scope: cdk.App;
+    sub_domain: string;
+    web_app_name: string;
 }) => {
-    const stack = new cdk.Stack(scope, name, app_props);
+    const stack = new cdk.Stack(scope, web_app_name, app_props);
 
-    
+    const { webapp_bucket, webapp_distribution } = createWebAppS3({
+        app_props,
+        domain_name,
+        stack,
+        sub_domain,
+        web_app_name,
+    });
+
+    createWebAppPipeline({
+        app_props,
+        branch,
+        bucket: webapp_bucket,
+        environment_variables,
+        repo,
+        stack,
+        web_app_name,
+    });
 };
-
-export default createWebAppStack;

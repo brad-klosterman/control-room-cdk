@@ -24,4 +24,5 @@
     ]
   },
   "exclude": ["node_modules", "cdk.out"],
+  "include": ["**/*.ts", "**/*.tsx"]
 }

@@ -1,21 +1,21 @@
-import * as cdk from "@aws-cdk/core";
-import * as ssm from "@aws-cdk/aws-ssm";
+import * as ssm from '@aws-cdk/aws-ssm';
+import * as cdk from '@aws-cdk/core';
 
 const putParameter = ({
-  stack,
-  paramKey,
-  paramValue,
+    paramKey,
+    paramValue,
+    stack,
 }: {
-  stack: cdk.Stack;
-  paramKey: string;
-  paramValue: string;
+    paramKey: string;
+    paramValue: string;
+    stack: cdk.Stack;
 }): string => {
-  new ssm.StringParameter(stack, paramKey, {
-    parameterName: paramKey,
-    stringValue: paramValue,
-  });
+    new ssm.StringParameter(stack, paramKey, {
+        parameterName: paramKey,
+        stringValue: paramValue,
+    });
 
-  return paramKey;
+    return paramKey;
 };
 
 export default putParameter;

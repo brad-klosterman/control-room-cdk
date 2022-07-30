@@ -2,6 +2,7 @@
   "name": "seon-cdk",
   "version": "2.0.0",
   "scripts": {
+    "lint:fix": "eslint --fix .",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",

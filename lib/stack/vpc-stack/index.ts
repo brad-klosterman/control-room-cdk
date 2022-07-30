@@ -1,11 +1,10 @@
-import * as cdk from "@aws-cdk/core";
+import * as cdk from '@aws-cdk/core';
 
-import configureVPC from "./constructs/configureVPC";
-import configureECSCluster from "./constructs/configureECSCluster";
-import configureCloudMap from "./constructs/configureCloudMap";
-import putParameter from "./constructs/putParameter";
-
-import { IVPCProperties } from "./interfaces";
+import configureCloudMap from './constructs/configureCloudMap';
+import configureECSCluster from './constructs/configureECSCluster';
+import configureVPC from './constructs/configureVPC';
+import putParameter from './constructs/putParameter';
+import { IVPCProperties } from './interfaces';
 
 /** Constructs the stack with given properties.
  * @param scope                 The CDK app
@@ -16,61 +15,61 @@ import { IVPCProperties } from "./interfaces";
  * @param vpcProperties         IVPCProperties
  */
 export const createVPC = ({
-  scope,
-  props,
-  cloudName,
-  clusterName,
-  vpcProperties,
+    cloudName,
+    clusterName,
+    props,
+    scope,
+    vpcProperties,
 }: {
-  scope: cdk.App;
-  props: cdk.StackProps;
-  cloudName: string;
-  clusterName: string;
-  vpcProperties: IVPCProperties;
+    cloudName: string;
+    clusterName: string;
+    props: cdk.StackProps;
+    scope: cdk.App;
+    vpcProperties: IVPCProperties;
 }) => {
-  const stack = new cdk.Stack(scope, vpcProperties.vpcName + "STACK", props);
+    const stack = new cdk.Stack(scope, vpcProperties.vpcName + 'STACK', props);
 
-  const vpc = configureVPC({
-    stack,
-    ...vpcProperties,
-  });
+    const vpc = configureVPC({
+        stack,
+        ...vpcProperties,
+    });
 
-  const cluster = configureECSCluster({ vpc, stack, clusterName });
+    const cluster = configureECSCluster({ clusterName, stack, vpc });
 
-  const cloudMapNamespace = configureCloudMap({
-    cluster,
-    nameSpace: cloudName,
-  });
+    const cloudMapNamespace = configureCloudMap({
+        cluster,
+        nameSpace: cloudName,
+    });
 
-  putParameter({
-    stack,
-    paramKey: vpcProperties.vpcName + "NAME",
-    paramValue: vpcProperties.vpcName,
-  });
+    putParameter({
+        paramKey: vpcProperties.vpcName + 'NAME',
+        paramValue: vpcProperties.vpcName,
+        stack,
+    });
 
-  putParameter({
-    stack,
-    paramKey: cloudName + "NS",
-    paramValue: cloudMapNamespace.namespaceName,
-  });
+    putParameter({
+        paramKey: cloudName + 'NS',
+        paramValue: cloudMapNamespace.namespaceName,
+        stack,
+    });
 
-  putParameter({
-    stack,
-    paramKey: cloudName + "ARN",
-    paramValue: cloudMapNamespace.namespaceArn,
-  });
-  
-  putParameter({
-    stack,
-    paramKey: cloudName + "ID",
-    paramValue: cloudMapNamespace.namespaceId,
-  });
+    putParameter({
+        paramKey: cloudName + 'ARN',
+        paramValue: cloudMapNamespace.namespaceArn,
+        stack,
+    });
 
-  return {
-    vpc,
-    cluster,
-    cloudMapNamespace,
-  };
+    putParameter({
+        paramKey: cloudName + 'ID',
+        paramValue: cloudMapNamespace.namespaceId,
+        stack,
+    });
+
+    return {
+        cloudMapNamespace,
+        cluster,
+        vpc,
+    };
 };
 
 export default createVPC;

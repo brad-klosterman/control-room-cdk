@@ -1,16 +1,16 @@
-import * as cdk from '@aws-cdk/core';
 import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
-import { IWidget } from "@aws-cdk/aws-cloudwatch";
+import { IWidget } from '@aws-cdk/aws-cloudwatch';
+import * as cdk from '@aws-cdk/core';
 
 export interface CloudWatchDashboardProps {
-    readonly projectFullName: string;
     readonly dashboardName: string;
     readonly period: cdk.Duration;
+    readonly projectFullName: string;
 }
 
 export class CloudWatchDashboard extends cdk.Construct {
-
     private dashboard: cloudwatch.Dashboard;
+
     private props: CloudWatchDashboardProps;
 
     constructor(scope: cdk.Construct, id: string, props: CloudWatchDashboardProps) {
@@ -26,63 +26,90 @@ export class CloudWatchDashboard extends cdk.Construct {
         this.dashboard.addWidgets(...widgets);
     }
 
-    public createWidget(name: string, metrics: cloudwatch.IMetric[], width?: number, label?: string): cloudwatch.GraphWidget {
+    public createWidget(
+        name: string,
+        metrics: cloudwatch.IMetric[],
+        width?: number,
+        label?: string,
+    ): cloudwatch.GraphWidget {
         const widget = new cloudwatch.GraphWidget({
-            title: name,
             left: metrics,
-            width: width,
             leftYAxis: {
-                label: label
-            }
-        });
-        return widget;
-    }
-
-    public createWidget2(name: string, metrics: cloudwatch.IMetric[], width?: number): cloudwatch.GraphWidget {
-        const widget = new cloudwatch.GraphWidget({ 
-            title: name,
-            left: metrics,
-            width: width,
-            view: cloudwatch.GraphWidgetView.TIME_SERIES,
-            stacked: false,
-            leftYAxis: {
-                min: 0,
-                max: 1,
-                showUnits: false
+                label: label,
             },
+            title: name,
+            width: width,
         });
+
         return widget;
     }
 
-    public createLeftRightWidget(name: string, leftMetrics: cloudwatch.IMetric[], rightMetrics: cloudwatch.IMetric[], width?: number): cloudwatch.GraphWidget {
+    public createWidget2(
+        name: string,
+        metrics: cloudwatch.IMetric[],
+        width?: number,
+    ): cloudwatch.GraphWidget {
         const widget = new cloudwatch.GraphWidget({
+            left: metrics,
+            leftYAxis: {
+                max: 1,
+                min: 0,
+                showUnits: false,
+            },
+            stacked: false,
             title: name,
+            view: cloudwatch.GraphWidgetView.TIME_SERIES,
+            width: width,
+        });
+
+        return widget;
+    }
+
+    public createLeftRightWidget(
+        name: string,
+        leftMetrics: cloudwatch.IMetric[],
+        rightMetrics: cloudwatch.IMetric[],
+        width?: number,
+    ): cloudwatch.GraphWidget {
+        const widget = new cloudwatch.GraphWidget({
             left: leftMetrics,
             right: rightMetrics,
-            width: width
+            title: name,
+            width: width,
         });
+
         return widget;
     }
 
-    public createDynamoDBMetric(tableName: string, metricName: string, options: cloudwatch.MetricOptions = {}, operation?: string): cloudwatch.Metric {
-        var dimensions: any = { TableName: tableName };
+    public createDynamoDBMetric(
+        tableName: string,
+        metricName: string,
+        options: cloudwatch.MetricOptions = {},
+        operation?: string,
+    ): cloudwatch.Metric {
+        const dimensions: any = { TableName: tableName };
+
         if (operation != undefined) {
-            dimensions['operation'] = operation
+            dimensions.operation = operation;
         }
 
         return new cloudwatch.Metric({
+            dimensions: dimensions,
+            label: options.label != undefined ? options.label : metricName,
             metricName,
             namespace: 'AWS/DynamoDB',
-            dimensions: dimensions,
+            period: this.props.period,
             statistic: options.statistic,
             unit: options.unit,
-            period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            ...options
+            ...options,
         });
     }
 
-    public createLambdaMetric(lambdaFunctionName: string, metricName: string, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
+    public createLambdaMetric(
+        lambdaFunctionName: string,
+        metricName: string,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
         /*
         Options:
          - Sum : cloudwatch.Unit.COUNT
@@ -90,21 +117,33 @@ export class CloudWatchDashboard extends cdk.Construct {
         */
 
         return new cloudwatch.Metric({
+            dimensions: {
+                FunctionName: lambdaFunctionName.includes(':')
+                    ? lambdaFunctionName.split(':')[0]
+                    : lambdaFunctionName, //lambdaNameAlias.split(':')[0],
+                Resource: lambdaFunctionName, //lambdaNameAlias
+            },
+            label: options.label != undefined ? options.label : metricName,
             metricName,
+
             namespace: 'AWS/Lambda',
-            dimensions: {
-                FunctionName: lambdaFunctionName.includes(':') ? lambdaFunctionName.split(':')[0] : lambdaFunctionName, //lambdaNameAlias.split(':')[0],
-                Resource: lambdaFunctionName      //lambdaNameAlias
-            },
-            statistic: options.statistic, // Sum
-            unit: options.unit, //cloudwatch.Unit.COUNT
+
+            //cloudwatch.Unit.COUNT
             period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            ...options
+
+            statistic: options.statistic,
+            // Sum
+            unit: options.unit,
+            ...options,
         });
     }
 
-    public createIotMetric(ruleName: string, metricName: string, actionType: string, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
+    public createIotMetric(
+        ruleName: string,
+        metricName: string,
+        actionType: string,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
         /*
         Options:
          - Sum : cloudwatch.Unit.COUNT
@@ -112,147 +151,195 @@ export class CloudWatchDashboard extends cdk.Construct {
         */
 
         return new cloudwatch.Metric({
-            metricName,
-            namespace: 'AWS/IoT',
             dimensions: {
+                ActionType: actionType,
                 RuleName: ruleName,
-                ActionType: actionType
             },
-            statistic: options.statistic, // Sum
-            unit: options.unit, //cloudwatch.Unit.COUNT
-            period: this.props.period,
             label: options.label != undefined ? options.label : metricName,
-            ...options
+            metricName,
+
+            namespace: 'AWS/IoT',
+
+            //cloudwatch.Unit.COUNT
+            period: this.props.period,
+
+            statistic: options.statistic,
+            // Sum
+            unit: options.unit,
+            ...options,
         });
     }
 
-    public createKinesisMetric(streamName: string, metricName: string, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
+    public createKinesisMetric(
+        streamName: string,
+        metricName: string,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
         return new cloudwatch.Metric({
+            dimensions: {
+                StreamName: streamName,
+            },
+            label: options.label != undefined ? options.label : metricName,
             metricName,
             namespace: 'AWS/Kinesis',
-            dimensions: {
-                StreamName: streamName
-            },
-            unit: cloudwatch.Unit.COUNT,
             period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            ...options
+            unit: cloudwatch.Unit.COUNT,
+            ...options,
         });
     }
 
-    public createEndpointInstanceMetrics(endpointName: string, variantName: string, metricNames: string[], options: cloudwatch.MetricOptions = {}): cloudwatch.Metric[] {
+    public createEndpointInstanceMetrics(
+        endpointName: string,
+        variantName: string,
+        metricNames: string[],
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric[] {
         const metric: cloudwatch.Metric[] = metricNames.map(metricName => {
             return new cloudwatch.Metric({
+                dimensions: {
+                    EndpointName: endpointName,
+                    VariantName: variantName,
+                },
+                label: options.label != undefined ? options.label : metricName,
                 metricName,
                 namespace: '/aws/sagemaker/Endpoints',
-                dimensions: {
-                    EndpointName: endpointName,
-                    VariantName: variantName,
-                },
+                period: this.props.period,
                 statistic: 'Average',
                 unit: cloudwatch.Unit.PERCENT,
-                period: this.props.period,
-                label: options.label != undefined ? options.label : metricName,
-                ...options
+                ...options,
             });
-        })
+        });
 
         return metric;
     }
 
-    public createEndpointInvocationMetrics(endpointName: string, variantName: string, metricNames: string[], options: cloudwatch.MetricOptions = {}): cloudwatch.Metric[] {
+    public createEndpointInvocationMetrics(
+        endpointName: string,
+        variantName: string,
+        metricNames: string[],
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric[] {
         const metric: cloudwatch.Metric[] = metricNames.map(metricName => {
             return new cloudwatch.Metric({
-                metricName,
-                namespace: 'AWS/SageMaker',
                 dimensions: {
                     EndpointName: endpointName,
                     VariantName: variantName,
                 },
-                statistic: options.statistic, // Sum, Average
-                unit: options.unit, //cloudwatch.Unit.COUNT Milliseconds
-                period: this.props.period,
                 label: options.label != undefined ? options.label : metricName,
-                ...options
+                metricName,
+
+                namespace: 'AWS/SageMaker',
+
+                //cloudwatch.Unit.COUNT Milliseconds
+                period: this.props.period,
+
+                statistic: options.statistic,
+                // Sum, Average
+                unit: options.unit,
+                ...options,
             });
-        })
+        });
 
         return metric;
     }
 
-    public createEsDomainMetric(domainName: string, metricName: string, clientId: string, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
+    public createEsDomainMetric(
+        domainName: string,
+        metricName: string,
+        clientId: string,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
         return new cloudwatch.Metric({
+            color: options.color,
+            dimensions: {
+                ClientId: clientId,
+                DomainName: domainName,
+            },
+            label: options.label != undefined ? options.label : metricName,
             metricName,
             namespace: 'AWS/ES',
-            dimensions: {
-                DomainName: domainName,
-                ClientId: clientId
-            },
+            period: this.props.period,
             statistic: options.statistic,
             unit: options.unit,
-            period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            color: options.color,
-            ...options
-        });
-    }
-    public createEsDomainMetric2(domainName: string, metricName: string, clientId: string, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
-        return new cloudwatch.Metric({
-            metricName,
-            namespace: '.',
-            dimensions: {
-                DomainName: domainName,
-                '.': '.'
-            },
-            statistic: options.statistic,
-            unit: options.unit,
-            period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            color: options.color,
-            ...options
+            ...options,
         });
     }
 
-    public createApiGatewayMetric(apiName: string, metricName: string, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
+    public createEsDomainMetric2(
+        domainName: string,
+        metricName: string,
+        clientId: string,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
         return new cloudwatch.Metric({
+            color: options.color,
+            dimensions: {
+                '.': '.',
+                DomainName: domainName,
+            },
+            label: options.label != undefined ? options.label : metricName,
             metricName,
-            namespace: 'AWS/ApiGateway',
+            namespace: '.',
+            period: this.props.period,
+            statistic: options.statistic,
+            unit: options.unit,
+            ...options,
+        });
+    }
+
+    public createApiGatewayMetric(
+        apiName: string,
+        metricName: string,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
+        return new cloudwatch.Metric({
             dimensions: {
                 ApiName: apiName,
             },
+            label: options.label != undefined ? options.label : metricName,
+            metricName,
+            namespace: 'AWS/ApiGateway',
+            period: this.props.period,
             statistic: options.statistic,
             unit: options.unit,
-            period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            ...options
+            ...options,
         });
     }
 
-    public createSnsMetric(topicName: string, metricName: string, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
+    public createSnsMetric(
+        topicName: string,
+        metricName: string,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
         return new cloudwatch.Metric({
-            metricName,
-            namespace: 'AWS/SNS',
             dimensions: {
                 TopicName: topicName,
             },
+            label: options.label != undefined ? options.label : metricName,
+            metricName,
+            namespace: 'AWS/SNS',
+            period: this.props.period,
             statistic: options.statistic,
             unit: options.unit,
-            period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            ...options
+            ...options,
         });
     }
 
-    public createCustomMetric(namespace: string, metricName: string, dimensions: any, options: cloudwatch.MetricOptions = {}): cloudwatch.Metric {
+    public createCustomMetric(
+        namespace: string,
+        metricName: string,
+        dimensions: any,
+        options: cloudwatch.MetricOptions = {},
+    ): cloudwatch.Metric {
         return new cloudwatch.Metric({
+            dimensions: dimensions,
+            label: options.label != undefined ? options.label : metricName,
             metricName,
             namespace: namespace,
-            dimensions: dimensions,
+            period: this.props.period,
             statistic: options.statistic,
             unit: options.unit,
-            period: this.props.period,
-            label: options.label != undefined ? options.label : metricName,
-            ...options
+            ...options,
         });
     }
 }

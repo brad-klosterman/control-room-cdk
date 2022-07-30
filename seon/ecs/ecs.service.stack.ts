@@ -1,13 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as route53 from 'aws-cdk-lib/aws-route53';
-import { Effect } from 'aws-cdk-lib/aws-iam';
-import * as loadBalancerV2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { FargateTaskDefinitionProps } from 'aws-cdk-lib/aws-ecs/lib/fargate/fargate-task-definition';
+import * as loadBalancerV2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Effect } from 'aws-cdk-lib/aws-iam';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 
 import { ServiceParams, TaskDefContainer } from '../seon.app.interfaces';
-import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import { sourceECR } from './ecr';
 import configurePipeline from './ecs.pipeline';
 
@@ -17,58 +17,51 @@ import configurePipeline from './ecs.pipeline';
  */
 
 export const createECSServiceStack = ({
-    scope,
-    app_props,
-    service_name,
     alb,
-    zone,
-    sub_domain,
-    https_listener,
+    app_props,
     cluster,
     containers,
-    task_params,
+    https_listener,
+    scope,
+    service_name,
     service_params,
     services_target_group,
+    sub_domain,
+    task_params,
+    zone,
 }: {
-    scope: cdk.App;
-    app_props: cdk.StackProps;
-    service_name: string;
     alb: loadBalancerV2.ApplicationLoadBalancer;
-    zone: route53.IHostedZone;
-    sub_domain: string;
-    https_listener: loadBalancerV2.ApplicationListener;
+    app_props: cdk.StackProps;
     cluster: ecs.Cluster;
     containers: TaskDefContainer[];
-    task_params: FargateTaskDefinitionProps;
+    https_listener: loadBalancerV2.ApplicationListener;
+    scope: cdk.App;
+    service_name: string;
     service_params: ServiceParams;
     services_target_group: loadBalancerV2.ApplicationTargetGroup;
+    sub_domain: string;
+    task_params: FargateTaskDefinitionProps;
+    zone: route53.IHostedZone;
 }) => {
     const stack = new cdk.Stack(scope, service_name, app_props);
 
     const task_definition = new ecs.FargateTaskDefinition(stack, service_name + '-TASKDEF', {
-        family: service_name + '-TASKDEF',
         cpu: task_params.cpu,
+        family: service_name + '-TASKDEF',
         memoryLimitMiB: task_params.memoryLimitMiB,
         // runtimePlatform
     });
 
     task_definition.addToTaskRolePolicy(
         new iam.PolicyStatement({
-            effect: Effect.ALLOW,
             actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+            effect: Effect.ALLOW,
             resources: ['*'],
-        })
+        }),
     );
 
     const ecs_service = new ecs.FargateService(stack, service_name + '-FARGATE', {
-        serviceName: service_name,
-        cluster,
         assignPublicIp: false,
-        desiredCount: service_params.desiredCount,
-        minHealthyPercent: service_params.minHealthyPercent,
-        maxHealthyPercent: service_params.maxHealthyPercent,
-        taskDefinition: task_definition,
-        circuitBreaker: { rollback: true },
         // cloudMapOptions
         capacityProviderStrategies: [
             {
@@ -76,24 +69,33 @@ export const createECSServiceStack = ({
                 weight: 0,
             },
             {
-                capacityProvider: 'FARGATE',
                 base: 1,
+                capacityProvider: 'FARGATE',
                 weight: 1,
             },
         ],
+
+        circuitBreaker: { rollback: true },
+
+        cluster,
+
+        desiredCount: service_params.desiredCount,
+
+        maxHealthyPercent: service_params.maxHealthyPercent,
+
+        minHealthyPercent: service_params.minHealthyPercent,
+
+        serviceName: service_name,
+
+        taskDefinition: task_definition,
     });
-
-
-
-
-    
 
     // Load balance incoming requests to this service target
     const service_target_group = https_listener.addTargets(service_name + '-TG', {
-        targetGroupName: service_name + '-TG',
-        priority: service_params.priority,
         conditions: [loadBalancerV2.ListenerCondition.hostHeaders([sub_domain])],
         port: 80,
+        priority: service_params.priority,
+        targetGroupName: service_name + '-TG',
         targets: [ecs_service],
     });
 
@@ -101,12 +103,12 @@ export const createECSServiceStack = ({
     const sourced_containers = containers.map(container => {
         const containerPort = parseInt(container.environment.HOST_PORT);
 
-        const sourced_container = sourceECR({ stack, ecr_name: container.name + '-ecr' });
+        const sourced_container = sourceECR({ ecr_name: container.name + '-ecr', stack });
 
         task_definition
             .addContainer(container.name, {
-                image: ecs.ContainerImage.fromEcrRepository(sourced_container),
                 environment: container.environment,
+                image: ecs.ContainerImage.fromEcrRepository(sourced_container),
                 logging: new ecs.AwsLogDriver({ streamPrefix: container.name }),
             })
             .addPortMappings({
@@ -166,17 +168,17 @@ export const createECSServiceStack = ({
     });
 
     configurePipeline({
-        stack,
         cluster,
         service: ecs_service,
         service_name,
         sourced_containers,
+        stack,
     });
 
     new route53.ARecord(stack, service_name + `-ALIAS_RECORD_API`, {
         recordName: sub_domain,
-        zone,
         target: route53.RecordTarget.fromAlias(new route53targets.LoadBalancerTarget(alb)),
+        zone,
     });
 
     return {

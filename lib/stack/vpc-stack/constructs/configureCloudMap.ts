@@ -1,19 +1,19 @@
-import * as ecs from "@aws-cdk/aws-ecs";
-import * as serviceDiscovery from "@aws-cdk/aws-servicediscovery";
+import * as ecs from '@aws-cdk/aws-ecs';
+import * as serviceDiscovery from '@aws-cdk/aws-servicediscovery';
 
 const configureCloudMap = ({
-  nameSpace,
-  cluster,
+    cluster,
+    nameSpace,
 }: {
-  nameSpace: string;
-  cluster: ecs.Cluster;
+    cluster: ecs.Cluster;
+    nameSpace: string;
 }): serviceDiscovery.INamespace => {
-  const namespace = cluster.addDefaultCloudMapNamespace({
-    name: nameSpace,
-    type: serviceDiscovery.NamespaceType.DNS_PRIVATE,
-  });
+    const namespace = cluster.addDefaultCloudMapNamespace({
+        name: nameSpace,
+        type: serviceDiscovery.NamespaceType.DNS_PRIVATE,
+    });
 
-  return namespace;
+    return namespace;
 };
 
 export default configureCloudMap;

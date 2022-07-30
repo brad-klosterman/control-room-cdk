@@ -1,35 +1,34 @@
 import { FargateTaskDefinitionProps } from 'aws-cdk-lib/aws-ecs';
 
-
 export interface ContainerEnvironment {
-    APP_ENVIRONMENT: 'development' | 'staging' | 'production';
-    NODE_ENV: 'development' | 'staging' | 'production';
-    APOLLO_KEY: string;
     APOLLO_GRAPH_REF: string;
+    APOLLO_KEY: string;
+    APP_ENVIRONMENT: 'development' | 'staging' | 'production';
     HOST_PORT: string;
+    NODE_ENV: 'development' | 'staging' | 'production';
     REDIS_HOST_ADDRESS: string;
     SEON_RESTAPI_BASEURL: string;
 }
 
 export interface ServiceParams {
-    priority: number;
     desiredCount: number;
-    minHealthyPercent: number;
     maxHealthyPercent: number;
+    minHealthyPercent: number;
+    priority: number;
 }
 
 export interface TaskDefContainer {
-    name: string;
-    repo: string;
     branch: 'development' | 'staging' | 'main';
     environment: { [key: string]: string };
     health_check_url: string;
+    name: string;
+    repo: string;
 }
 
 export interface ServiceConfig {
-    name: string;
-    sub_domain: string;
-    service_params: ServiceParams;
-    task_params: FargateTaskDefinitionProps;
     containers: TaskDefContainer[];
+    name: string;
+    service_params: ServiceParams;
+    sub_domain: string;
+    task_params: FargateTaskDefinitionProps;
 }

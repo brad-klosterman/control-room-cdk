@@ -4,19 +4,19 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 
 export const createCache = ({
-    scope,
     app_props,
-    vpc,
-    cluster,
     cache_name,
     cache_properties,
+    cluster,
+    scope,
+    vpc,
 }: {
-    scope: cdk.App;
     app_props: cdk.StackProps;
-    vpc: ec2.IVpc;
-    cluster: ecs.Cluster;
     cache_name: string;
     cache_properties: elasticache.CfnReplicationGroupProps;
+    cluster: ecs.Cluster;
+    scope: cdk.App;
+    vpc: ec2.IVpc;
 }) => {
     const stack = new cdk.Stack(scope, cache_name + '-STACK', app_props);
 
@@ -31,22 +31,22 @@ export const createCache = ({
     });
 
     const securityGroup = new ec2.SecurityGroup(stack, cache_name + '-SG', {
-        vpc: vpc,
-        securityGroupName: cache_name + '-SG',
-        description: 'SecurityGroup associated with the ElastiCache Redis Cluster',
         allowAllOutbound: true,
+        description: 'SecurityGroup associated with the ElastiCache Redis Cluster',
+        securityGroupName: cache_name + '-SG',
+        vpc: vpc,
     });
 
     securityGroup.connections.allowFromAnyIpv4(ec2.Port.tcp(6379), 'Redis ingress 6379');
 
     new ec2.Connections({
-        securityGroups: [securityGroup],
         defaultPort: new ec2.Port({
-            protocol: ec2.Protocol.TCP,
             fromPort: 6379,
-            toPort: 6379,
+            protocol: ec2.Protocol.TCP,
             stringRepresentation: 'ec-sg-connection',
+            toPort: 6379,
         }),
+        securityGroups: [securityGroup],
     });
 
     const redisReplicationGroup = new elasticache.CfnReplicationGroup(
@@ -56,7 +56,7 @@ export const createCache = ({
             ...cache_properties,
             cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName,
             securityGroupIds: [securityGroup.securityGroupId],
-        }
+        },
     );
 
     redisReplicationGroup.node.addDependency(subnetGroup);
