@@ -1,24 +1,21 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 
 export const createCache = ({
     app_props,
     cache_name,
     cache_properties,
-    cluster,
     scope,
     vpc,
 }: {
     app_props: cdk.StackProps;
     cache_name: string;
     cache_properties: elasticache.CfnReplicationGroupProps;
-    cluster: ecs.Cluster;
     scope: cdk.App;
     vpc: ec2.IVpc;
 }) => {
-    const stack = new cdk.Stack(scope, cache_name + '-STACK', app_props);
+    const stack = new cdk.Stack(scope, cache_name, app_props);
 
     // Define a group for telling Elasticache which subnets to put cache nodes in.
     const subnetGroup = new elasticache.CfnSubnetGroup(stack, cache_name + '-SUBNET_GROUP', {
@@ -70,6 +67,7 @@ export const createCache = ({
     });
 
     return {
+        endpoint: redisReplicationGroup.attrPrimaryEndPointAddress,
         redis: redisReplicationGroup,
     };
 };

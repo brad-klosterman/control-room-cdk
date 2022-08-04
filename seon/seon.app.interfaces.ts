@@ -23,6 +23,7 @@ export interface TaskDefContainer {
     health_check_url: string;
     name: string;
     repo: string;
+    url_path: string;
 }
 
 export interface ServiceConfig {

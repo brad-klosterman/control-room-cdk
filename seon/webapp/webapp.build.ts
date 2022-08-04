@@ -25,11 +25,15 @@ export const buildWebApp = ({
             phases: {
                 install: {
                     'runtime-versions': {
-                        nodejs: '16.3.2',
+                        nodejs: '14',
                     },
                 },
                 pre_build: {
-                    commands: ['echo Installing source NPM dependencies...', 'npm install'],
+                    commands: [
+                        'echo Installing source NPM dependencies...',
+                        'npm run aws:login',
+                        'npm install',
+                    ],
                 },
                 build: {
                     commands: ['echo Build started on `date`', `${build_command}`],
@@ -60,9 +64,28 @@ export const buildWebApp = ({
 
     build_project.addToRolePolicy(
         new PolicyStatement({
-            actions: ['s3:PutObject', 's3:PutObjectAcl'],
+            actions: [
+                's3:PutObject',
+                's3:PutObjectAcl',
+                'codeartifact:GetAuthorizationToken',
+                'codeartifact:GetRepositoryEndpoint',
+                'codeartifact:ReadFromRepository',
+            ],
             effect: Effect.ALLOW,
             resources: ['*'],
+        }),
+    );
+
+    build_project.addToRolePolicy(
+        new PolicyStatement({
+            actions: ['sts:GetServiceBearerToken'],
+            effect: Effect.ALLOW,
+            resources: ['*'],
+            conditions: {
+                StringEquals: {
+                    'sts:AWSServiceName': 'codeartifact.amazonaws.com',
+                },
+            },
         }),
     );
 

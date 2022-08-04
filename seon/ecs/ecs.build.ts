@@ -49,8 +49,8 @@ const configureBuild = ({
             version: '0.2',
         }),
         environment: {
-            buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_2,
-            computeType: codebuild.ComputeType.LARGE,
+            buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_3,
+            computeType: codebuild.ComputeType.SMALL,
             privileged: true,
         },
         environmentVariables: {

@@ -79,7 +79,7 @@ export const createWebAppS3 = ({
     const certificate = new acm.DnsValidatedCertificate(stack, web_app_name + '-CERT', {
         domainName: webapp_domain,
         hostedZone: zone,
-        region: app_props?.env?.region,
+        region: 'us-east-1',
     });
 
     new CfnOutput(stack, web_app_name + '-CERT-OUT', { value: certificate.certificateArn });

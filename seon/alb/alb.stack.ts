@@ -10,67 +10,79 @@ import { createHTTPSRedirect } from './alb.redirects';
 
 export const createALBStack = ({
     app_name,
-    app_props,
+    domain_certificate_arn,
     domain_name,
-    scope,
+    stack,
     vpc,
 }: {
     app_name: string;
-    app_props: cdk.StackProps;
+    domain_certificate_arn: string;
     domain_name: string;
-    scope: cdk.App;
+    stack: cdk.Stack;
     vpc: ec2.IVpc;
 }) => {
-    const stack = new cdk.Stack(scope, app_name + '-LOADBALANCER', app_props);
+    /*
+     * DOMAIN
+     *
+     */
 
     const zone = route53.HostedZone.fromLookup(stack, app_name + '-ALB53-ZONE', {
         domainName: domain_name,
     });
 
-    const domainCertificateArn = `arn:aws:acm:${app_props?.env?.region}:${app_props?.env?.account}:certificate/${certificate_identifier}`;
-
     const certificate = acm.Certificate.fromCertificateArn(
         stack,
         app_name + '-CERTIFICATE',
-        domainCertificateArn,
+        domain_certificate_arn,
     );
+
+    /*
+     * Security Group
+     *
+     */
+
+    // security group that allows all traffic from the same security group
+    const security_group = new ec2.SecurityGroup(stack, app_name + '-SHARED-SG', {
+        allowAllOutbound: true,
+        vpc,
+    });
+
+    security_group.connections.allowFrom(security_group, ec2.Port.allTraffic());
+
+    // security group to provide a secure connection between the ALB and the containers
+    const alb_security_group = new ec2.SecurityGroup(stack, app_name + '-ALB-SG', {
+        allowAllOutbound: true,
+        vpc,
+    });
+
+    alb_security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS Traffic');
+
+    /*
+     * Application Load Balancer
+     *
+     */
 
     const alb = new loadBalancerV2.ApplicationLoadBalancer(stack, app_name + '-ALB', {
         internetFacing: true,
         loadBalancerName: app_name + '-ALB',
+        securityGroup: alb_security_group,
         vpc,
     });
 
     const https_listener = alb.addListener(app_name + '-ALB_LISTENER', {
         certificates: [loadBalancerV2.ListenerCertificate.fromArn(certificate.certificateArn)],
-        defaultAction: loadBalancerV2.ListenerAction.fixedResponse(200, {
-            contentType: 'text/plain',
-            messageBody: 'OK',
-        }),
+        // defaultTargetGroups: [],
         open: true,
         port: 443,
     });
 
-    createHTTPSRedirect(app_name + '-ALB_HTTTPSRedirect', stack, alb);
-
-    const services_target_group = new loadBalancerV2.ApplicationTargetGroup(
-        stack,
-        app_name + 'SERVICES-TG',
-        {
-            port: 80,
-            targetType: loadBalancerV2.TargetType.INSTANCE,
-            vpc,
-        },
-    );
-
-    https_listener.addTargetGroups(app_name + 'LISTENER-TARGET', {
-        targetGroups: [services_target_group],
+    https_listener.addAction(app_name + '-ALB_DEFAULT_RESPONSE', {
+        action: loadBalancerV2.ListenerAction.fixedResponse(404, {
+            messageBody: 'SEON DEVELOPMENT 404',
+        }),
     });
 
-    /*
-     * alb.logAccessLogs()
-     * logAccessLogs(bucket: IBucket, prefix?: string): void
-     */
+    createHTTPSRedirect(app_name + '-ALB_HTTTPSRedirect', stack, alb);
 
     // Add a Route 53 alias with the Load Balancer as the target
     new route53.ARecord(stack, app_name + `-ALIAS_RECORD`, {
@@ -80,10 +92,18 @@ export const createALBStack = ({
         zone,
     });
 
+    new cdk.CfnOutput(stack, app_name + '-HTTP-LISTENER-ARN', {
+        exportName: app_name + 'HTTP-LISTENER-ARN',
+        value: https_listener.listenerArn,
+    });
+
+    new cdk.CfnOutput(stack, app_name + '-ALB-DNS', { value: alb.loadBalancerDnsName });
+
     return {
         alb,
+        alb_security_group,
         https_listener,
-        services_target_group,
+        security_group,
         zone,
     };
 };

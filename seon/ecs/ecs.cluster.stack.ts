@@ -23,7 +23,6 @@ export const createECSClusterStack = ({
         containerInsights: true,
         enableFargateCapacityProviders: true,
         vpc,
-        // defaultCloudMapNamespace
     });
 
     const namespace = cluster.addDefaultCloudMapNamespace({

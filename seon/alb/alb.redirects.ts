@@ -8,7 +8,6 @@ export const createHTTPSRedirect = (
     loadBalancer: loadBalancerV2.ApplicationLoadBalancer,
 ) => {
     const port = 80;
-    loadBalancer.connections.allowFromAnyIpv4(ec2.Port.tcp(port));
 
     return new loadBalancerV2.CfnListener(scope, name, {
         defaultActions: [
