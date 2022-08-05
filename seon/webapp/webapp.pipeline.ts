@@ -23,7 +23,7 @@ const createWebAppPipeline = ({
     web_app_name: string;
 }) => {
     const pipeline = new codepipeline.Pipeline(stack, `${web_app_name}-PIPELINE`, {
-        crossAccountKeys: false,
+        crossAccountKeys: true,
         pipelineName: `${web_app_name}-PIPELINE`,
     });
 
