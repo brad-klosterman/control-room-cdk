@@ -148,8 +148,8 @@ export const createECSServiceStack = ({
                 deregistrationDelay: cdk.Duration.seconds(30),
                 healthCheck: {
                     healthyHttpCodes: '200,301,302',
-                    healthyThresholdCount: 5,
-                    interval: cdk.Duration.seconds(300),
+                    healthyThresholdCount: 2,
+                    interval: cdk.Duration.seconds(60),
                     path: sourced_container.health_check_url,
                     port: sourced_container.environment.HOST_PORT,
                     timeout: cdk.Duration.seconds(20),
@@ -172,7 +172,7 @@ export const createECSServiceStack = ({
             action: loadBalancerV2.ListenerAction.forward([target_group]),
             conditions: [
                 loadBalancerV2.ListenerCondition.hostHeaders([sub_domain]),
-                // loadBalancerV2.ListenerCondition.pathPatterns([sourced_container.url_path]),
+                loadBalancerV2.ListenerCondition.pathPatterns([sourced_container.url_path]),
             ],
             priority: service_params.priority + index,
         });
@@ -217,76 +217,3 @@ export const createECSServiceStack = ({
 };
 
 export default createECSServiceStack;
-
-/*
-
-let applicationLoadBalancerPathListenerRule = new elb.ApplicationListenerRule(this, 'PathListenerRule', {
-      listener: applicationLoadBalancerListener,
-      priority: 1,
-      conditions:[
-        elb.ListenerCondition.httpRequestMethods(['POST']),
-        elb.ListenerCondition.pathPatterns(['/test'])
-      ],
-      action: elb.ListenerAction.forward([applicationLoadBalancerTargetGroup])
-
-main_listener.add_action(  # REDIRECT EVERYTHING WWW. TO NON-WWW
-            "redirectWwwToNonWwwAction",
-            conditions=[
-                elbv2.ListenerCondition.host_headers(
-                    values=[f"www.{airflows_host}"]
-                )
-            ],
-            action=elbv2.ListenerAction.redirect(host=airflows_host),
-            priority=1,
-        )
-
-    const service_target_group = https_listener.addTargets(service_name + '-TG', {
-        conditions: [loadBalancerV2.ListenerCondition.hostHeaders([sub_domain])],
-        healthCheck: {
-            healthyHttpCodes: '200,301,302',
-            healthyThresholdCount: 5,
-            interval: cdk.Duration.seconds(300),
-            path: containers[0].health_check_url,
-            port: containers[0].environment.HOST_PORT,
-            timeout: cdk.Duration.seconds(20),
-            unhealthyThresholdCount: 2,
-        },
-        port: 443,
-        priority: service_params.priority,
-        targets: [
-            ecs_service.loadBalancerTarget({
-                containerName: containers[0].name,
-                containerPort: parseInt(containers[0].environment.HOST_PORT),
-            }),
-        ],
-    });
-    
-    const target_rule = new loadBalancerV2.CfnListenerRule(
-            stack,
-            sourced_container.name + '-target-rule',
-            {
-                actions: [
-                    {
-                        targetGroupArn: target_group.targetGroupArn,
-                        type: 'forward',
-                    },
-                ],
-                conditions: [
-                    {
-                        field: 'host-header',
-                        pathPatternConfig: {
-                            values: [sub_domain],
-                        },
-                    },
-                    {
-                        field: 'path-pattern',
-                        pathPatternConfig: {
-                            values: [sourced_container.url_path],
-                        },
-                    },
-                ],
-                listenerArn: https_listener.listenerArn,
-                priority: service_params.priority + index,
-            },
-        );
- */
