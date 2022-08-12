@@ -56,5 +56,6 @@ export const createECSClusterStack = ({
 
     return {
         cluster,
+        namespace,
     };
 };

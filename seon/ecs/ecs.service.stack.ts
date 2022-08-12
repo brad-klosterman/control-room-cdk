@@ -24,6 +24,7 @@ export const createECSServiceStack = ({
     cluster,
     containers,
     https_listener,
+    log_group,
     security_group,
     service_name,
     service_params,
@@ -38,6 +39,7 @@ export const createECSServiceStack = ({
     cluster: ecs.Cluster;
     containers: TaskDefContainer[];
     https_listener: loadBalancerV2.ApplicationListener;
+    log_group: cdk.aws_logs.LogGroup;
     security_group: ec2.SecurityGroup;
     service_name: string;
     service_params: ServiceParams;
@@ -51,14 +53,7 @@ export const createECSServiceStack = ({
         assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
     });
 
-    const task_definition = new ecs.FargateTaskDefinition(stack, service_name + '-TASKDEF', {
-        cpu: task_params.cpu,
-        family: service_name + '-TASKDEF',
-        memoryLimitMiB: task_params.memoryLimitMiB,
-        taskRole: task_role,
-        // runtimePlatform
-    });
-
+    // todo check what we need for app mesh
     const execution_role_policy = new iam.PolicyStatement({
         actions: [
             'ecr:GetAuthorizationToken',
@@ -75,7 +70,40 @@ export const createECSServiceStack = ({
         resources: ['*'],
     });
 
+    const task_definition = new ecs.FargateTaskDefinition(stack, service_name + '-TASKDEF', {
+        cpu: task_params.cpu,
+        family: service_name + '-TASKDEF',
+        memoryLimitMiB: task_params.memoryLimitMiB,
+        proxyConfiguration: new ecs.AppMeshProxyConfiguration({
+            containerName: service_name + '-envoy',
+            properties: {
+                appPorts: [4000], // all containers ports
+                egressIgnoredIPs: ['169.254.170.2', '169.254.169.254'],
+                ignoredUID: 1337,
+                proxyEgressPort: 15001,
+                proxyIngressPort: 15000,
+            },
+        }),
+        taskRole: task_role,
+        // executionRole
+        // runtimePlatform
+    });
+
     task_definition.addToExecutionRolePolicy(execution_role_policy);
+
+    // add Envoy proxy Docker container image to the task definition
+
+    // task_definition.addContainer(service_name + '-ENVOY', {
+    //     environment: container.environment,
+    //     // image: ecs.ContainerImage.fromEcrRepository(ecr_repo),
+    //     image: ecs.ContainerImage.fromRegistry('amazon/amazon-ecs-sample'),
+    //     logging: new ecs.AwsLogDriver({
+    //         logGroup: log_group,
+    //         streamPrefix: container.name,
+    //     }),
+    // });
+
+    // add x-ray container
 
     const sourced_containers = containers.map(container => {
         const containerPort = parseInt(container.environment.HOST_PORT);
@@ -87,7 +115,10 @@ export const createECSServiceStack = ({
                 environment: container.environment,
                 // image: ecs.ContainerImage.fromEcrRepository(ecr_repo),
                 image: ecs.ContainerImage.fromRegistry('amazon/amazon-ecs-sample'),
-                logging: new ecs.AwsLogDriver({ streamPrefix: container.name }),
+                logging: new ecs.AwsLogDriver({
+                    logGroup: log_group,
+                    streamPrefix: container.name,
+                }),
             })
             .addPortMappings({
                 containerPort,
@@ -118,7 +149,7 @@ export const createECSServiceStack = ({
     );
 
     const ecs_service = new ecs.FargateService(stack, service_name, {
-        assignPublicIp: true,
+        assignPublicIp: false,
         capacityProviderStrategies: [
             {
                 base: 1,
@@ -131,6 +162,11 @@ export const createECSServiceStack = ({
             },
         ],
         circuitBreaker: { rollback: true },
+        // cloudMapOptions: {
+        //     cloudMapNamespace: from the cluster,
+        //     containerPort: portMappings main,
+        //     name: id,
+        // },
         cluster,
         desiredCount: service_params.desiredCount,
         maxHealthyPercent: service_params.maxHealthyPercent,
@@ -139,6 +175,8 @@ export const createECSServiceStack = ({
         serviceName: service_name,
         taskDefinition: task_definition,
     });
+
+    // register the microservices for discovery through AWS Cloud Map
 
     sourced_containers.map((sourced_container, index) => {
         const target_group = new loadBalancerV2.ApplicationTargetGroup(
@@ -157,7 +195,7 @@ export const createECSServiceStack = ({
                 },
                 port: 80,
                 protocol: loadBalancerV2.ApplicationProtocol.HTTP,
-                stickinessCookieDuration: cdk.Duration.hours(1), // todo ?
+                // stickinessCookieDuration: cdk.Duration.hours(1), // todo ?
                 targets: [
                     ecs_service.loadBalancerTarget({
                         containerName: sourced_container.name,
@@ -178,14 +216,16 @@ export const createECSServiceStack = ({
         });
     });
 
-    const scaling = ecs_service.autoScaleTaskCount({ maxCapacity: 6 });
-    const cpu_utilization = ecs_service.metricCpuUtilization();
-
     /*
+     * Auto Scaling
+     *
      * scale out when CPU utilization exceeds 50%
      * increase scale out speed if CPU utilization exceeds 70%
      * scale in again when CPU utilization falls below 10%.
      */
+
+    const scaling = ecs_service.autoScaleTaskCount({ maxCapacity: 6 });
+    const cpu_utilization = ecs_service.metricCpuUtilization();
 
     scaling.scaleOnMetric(service_name + '-ASCALE_CPU', {
         adjustmentType: aws_applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
@@ -196,6 +236,11 @@ export const createECSServiceStack = ({
             { change: +3, lower: 70 },
         ],
     });
+
+    /*
+     * CI/CD Pipeline
+     *
+     */
 
     const pipeline = configurePipeline({
         cluster,

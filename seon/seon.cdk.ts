@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
+import * as logs from 'aws-cdk-lib/aws-logs';
 
 import createALBStack from './alb/alb.stack';
 import { createCache } from './cache.stack/cache.stack';
@@ -62,6 +63,12 @@ const { endpoint } = createCache({
 
 const stack = new cdk.Stack(APP.cdk, APP.name + '-STACK', APP.props);
 
+const log_group = new logs.LogGroup(stack, APP.name + '-LOG_GROUP', {
+    logGroupName: APP.name + '-LOG_GROUP',
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+    retention: logs.RetentionDays.TWO_WEEKS,
+});
+
 const { alb, alb_security_group, https_listener, security_group, zone } = createALBStack({
     app_name: APP.name,
     domain_certificate_arn,
@@ -75,6 +82,7 @@ const resources = {
     alb_security_group,
     cluster,
     https_listener,
+    log_group,
     security_group,
     stack,
     vpc,

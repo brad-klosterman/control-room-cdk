@@ -56,6 +56,7 @@ export const createALBStack = ({
     });
 
     alb_security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS Traffic');
+    alb_security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow HTTP Traffic');
 
     /*
      * Application Load Balancer
