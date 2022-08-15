@@ -25,21 +25,21 @@ const base_stack = new BaseStack(app, APP.name + 'BASE', {
     stackName: APP.name + 'BASE',
 });
 
-const serviceDiscoveryStack = new ServiceDiscoveryStack(base_stack, 'ServiceDiscoveryStack', {
-    description: 'Defines the application load balancers and the CloudMap service.',
-    stackName: 'service-discovery',
+const discovery_stack = new ServiceDiscoveryStack(base_stack, APP.name + 'DISCOVERY', {
+    description: 'Defines the Application Load Balancers and the CloudMap Service.',
+    stackName: APP.name + 'DISCOVERY',
 });
 
-const meshStack = new MeshStack(serviceDiscoveryStack, 'MeshStack', {
-    description: 'Defines mesh components like the virtual nodes, routers and services.',
-    stackName: 'mesh-components',
+const mesh_stack = new MeshStack(discovery_stack, APP.name + 'MESH', {
+    description: 'Defines Mesh Components like the Virtual Nodes, Routers and Services.',
+    stackName: APP.name + 'MESH',
 });
 
-const ecsServicesStack = new EcsServicesStack(meshStack, 'ECSServicesStack', {
-    description: 'Defines the Fargate services and their task definitions.',
-    stackName: 'ecs-services',
+const ecs_stack = new EcsServicesStack(mesh_stack, APP.name + 'ECS', {
+    description: 'Defines the Fargate Services and their Task Definitions.',
+    stackName: APP.name + 'ECS',
 });
 
-serviceDiscoveryStack.addDependency(base_stack);
-meshStack.addDependency(serviceDiscoveryStack);
-ecsServicesStack.addDependency(meshStack);
+discovery_stack.addDependency(base_stack);
+mesh_stack.addDependency(discovery_stack);
+ecs_stack.addDependency(mesh_stack);

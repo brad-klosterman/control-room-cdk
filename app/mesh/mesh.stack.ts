@@ -5,39 +5,40 @@ import { DiscoveryStack } from '../discovery/discovery.stack';
 
 export class MeshStack extends Stack {
     readonly service_discovery: DiscoveryStack;
-
-    readonly base_name: string;
-
-    readonly mesh_name: string;
-
     readonly mesh: appmesh.Mesh;
-
-    readonly gateway: appmesh.VirtualGateway;
+    readonly virtual_node_listener: appmesh.VirtualNodeListener;
+    readonly federation_virtual_node: appmesh.VirtualNode;
+    readonly federation_virtual_router: appmesh.VirtualRouter;
+    readonly federation_virtual_service: appmesh.VirtualService;
 
     constructor(service_discovery: DiscoveryStack, id: string, props?: StackProps) {
         super(service_discovery, id, props);
 
         this.service_discovery = service_discovery;
 
-        this.base_name = this.service_discovery.base.base_name;
+        const base_name = this.service_discovery.base.base_name;
 
-        this.mesh_name = this.base_name + 'MESH';
-
-        this.mesh = new appmesh.Mesh(this, this.mesh_name, {
-            meshName: this.mesh_name,
+        this.mesh = new appmesh.Mesh(this, base_name + 'MESH', {
+            meshName: base_name + 'MESH',
         });
 
-        this.gateway = new appmesh.VirtualGateway(this, this.mesh_name + 'GATEWAY', {
-            listeners: [
-                appmesh.VirtualGatewayListener.http({
-                    healthCheck: appmesh.HealthCheck.http({
-                        interval: Duration.seconds(10),
-                    }),
-                    port: 443,
-                }),
-            ],
-            mesh: this.mesh,
-            virtualGatewayName: this.mesh_name + 'GATEWAY',
+        this.virtual_node_listener = appmesh.VirtualNodeListener.http({
+            port: 4000,
         });
+
+        this.federation_virtual_node = new appmesh.VirtualNode(
+            this,
+            this.stackName + 'federation_virtual_node',
+            this.buildVirtualNodeProps(this.service_discovery.base.federation_service),
+        );
     }
+
+    private buildVirtualNodeProps = (service_name: string): appmesh.VirtualNodeProps => {
+        return {
+            listeners: [this.virtual_node_listener],
+            mesh: this.mesh,
+            serviceDiscovery: this.service_discovery.getServiceDiscovery(service_name),
+            virtualNodeName: service_name + '-vn',
+        };
+    };
 }
