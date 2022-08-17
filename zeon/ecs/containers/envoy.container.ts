@@ -2,17 +2,23 @@ import { Duration } from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { Construct } from 'constructs';
 
-import { MeshStack } from '../stacks/mesh-components';
-import { EnvoyContainerProps } from '../utils';
+import { MeshStack } from '../../mesh/mesh.stack';
 
-export class EnvoySidecar extends Construct {
+export class EnvoyContainer extends Construct {
     public readonly options: ecs.ContainerDefinitionOptions;
 
-    constructor(mesh: MeshStack, id: string, props: EnvoyContainerProps) {
+    constructor(
+        mesh: MeshStack,
+        id: string,
+        props: {
+            app_ports: number[];
+            appMeshResourceArn: string;
+            enableXrayTracing: boolean;
+        },
+    ) {
         super(mesh, id);
 
         this.options = {
-            containerName: 'envoy',
             environment: {
                 APPMESH_RESOURCE_ARN: props.appMeshResourceArn,
                 ENABLE_ENVOY_STATS_TAGS: '1',
@@ -28,11 +34,9 @@ export class EnvoySidecar extends Construct {
                 retries: 10,
                 timeout: Duration.seconds(10),
             },
-            image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext('IMAGE_ENVOY')),
-            logging: ecs.LogDriver.awsLogs({
-                logGroup: mesh.serviceDiscovery.base.logGroup,
-                streamPrefix: props.logStreamPrefix,
-            }),
+            image: ecs.ContainerImage.fromRegistry(
+                'public.ecr.aws/appmesh/aws-appmesh-envoy:v1.22.2.1-prod',
+            ),
             portMappings: [
                 {
                     containerPort: 9901,
@@ -50,17 +54,4 @@ export class EnvoySidecar extends Construct {
             user: '1337',
         };
     }
-
-    public static buildAppMeshProxy = (...appPorts: number[]): ecs.AppMeshProxyConfiguration => {
-        return new ecs.AppMeshProxyConfiguration({
-            containerName: 'envoy',
-            properties: {
-                appPorts: appPorts,
-                egressIgnoredIPs: ['169.254.170.2', '169.254.169.254'],
-                ignoredUID: 1337,
-                proxyEgressPort: 15001,
-                proxyIngressPort: 15000,
-            },
-        });
-    };
 }

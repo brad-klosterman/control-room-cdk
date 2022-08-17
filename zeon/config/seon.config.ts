@@ -1,0 +1,75 @@
+import { AvailableServices, ServiceConfig } from './seon.config.interfaces';
+
+const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
+    desired_count: 1,
+    discovery_type: 'DNS',
+    health_check_url: '/.well-known/apollo/server-health',
+    host_header: 'federation.development.seon-gateway.com',
+    main_container: {
+        environment: {
+            APOLLO_GRAPH_REF: 'SEON@development',
+            APOLLO_KEY: 'service:SEON:mMJVKJ8jbZVbyx39tybPqg',
+            ENVIRONMENT: 'development',
+            GATEWAY_ENDPOINT: '',
+            PORT: '4000',
+            REDIS_HOST_ADDRESS: '',
+            SEON_REST_URL: 'https://api.staging.seon.network/',
+        },
+        github: {
+            branch: 'development', // todo
+            repo: 'seon-federation-gateway',
+        },
+    },
+    max_healthy_percent: 300,
+    min_healthy_percent: 50,
+    path: '/graphql',
+    priority: 10,
+    task_props: {
+        cpu: 256,
+        family: 'apollo',
+        memoryLimitMiB: 512,
+    },
+};
+
+const ALARMS_SERVICE_CONFIG: ServiceConfig = {
+    desired_count: 1,
+    discovery_type: 'CLOUDMAP',
+    health_check_url: '/.well-known/apollo/server-health',
+    host_header: 'alarms.development.seon-gateway.com',
+    main_container: {
+        environment: {
+            APOLLO_GRAPH_REF: 'SEON@development',
+            APOLLO_KEY: 'service:SEON:mMJVKJ8jbZVbyx39tybPqg',
+            ENVIRONMENT: 'development',
+            GATEWAY_ENDPOINT: 'federation.development.seon-gateway.com',
+            PORT: '4000',
+            REDIS_HOST_ADDRESS: '',
+            SEON_REST_URL: 'https://api.staging.seon.network/',
+        },
+        github: {
+            branch: 'development', // todo
+            repo: 'seon-alarms-graph',
+        },
+    },
+    max_healthy_percent: 300,
+    min_healthy_percent: 50,
+    path: '/graphql',
+    priority: 20,
+    task_props: {
+        cpu: 256,
+        family: 'apollo',
+        memoryLimitMiB: 512,
+    },
+};
+
+export const getServiceConfig = (service_namespace: AvailableServices): ServiceConfig => {
+    const services = {
+        'alarms-service': ALARMS_SERVICE_CONFIG,
+        'federation-service': FEDERATION_SERVICE_CONFIG,
+        'ssp-service': FEDERATION_SERVICE_CONFIG,
+        'subscriptions-service': FEDERATION_SERVICE_CONFIG,
+        'workforce-service': FEDERATION_SERVICE_CONFIG,
+    };
+
+    return services[service_namespace];
+};

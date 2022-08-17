@@ -8,7 +8,7 @@
     "test": "jest",
     "cdk": "cdk",
     "open-redis": "sudo openvpn --config ./scripts/cert/client-config.ovpn",
-    "synth-development": "cdk synth -c redis_url=ses1e3kp72cf8qsr.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificate_identifier=4bbacce2-ee0c-4134-92bb-e1e862d45c01 -c environment=development -c apollo_key=service:SEON:mMJVKJ8jbZVbyx39tybPqg --require-approval never --profile seon",
+    "synth-development": "cdk synth -c redis_url=redis -c certificate_identifier=4bbacce2-ee0c-4134-92bb-e1e862d45c01 -c environment=development -c apollo_key=service:SEON:mMJVKJ8jbZVbyx39tybPqg --require-approval never --profile seon --all",
     "deploy-development": "cdk deploy -c redis_url=ses1e3kp72cf8qsr.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificate_identifier=4bbacce2-ee0c-4134-92bb-e1e862d45c01 -c environment=development -c apollo_key=service:SEON:mMJVKJ8jbZVbyx39tybPqg --require-approval never --profile seon",
     "destroy-development": "cdk destroy -c environment=development --require-approval never --profile seon",
     "synth-stage": "cdk synth -c redisUrl=sesnet0p3iwk0a5.s1azzv.ng.0001.euc1.cache.amazonaws.com -c certificateIdentifier=6a5f7ab1-56fe-4096-a8b5-fd90fca63968 -c environment=stage -c apolloKey=service:SEON:cVqR32zFL1mVyu7qRWsoaQ --require-approval never --profile seon --all",
@@ -22,16 +22,8 @@
     "typescript": "4.7.4"
   },
   "devDependencies": {
-    "jest": "^28.1.3",
-    "ts-jest": "^28.0.7",
-    "ts-node": "^10.9.1",
-    "typescript": "4.7.4",
-    "prettier": "^2.7.1",
-    "stylelint": "^14.9.1",
-    "stylelint-order": "^5.0.0",
-    "stylelint-prettier": "^2.0.0",
-    "@types/jest": "^27.5.0",
     "@types/i18n-js": "^3.8.2",
+    "@types/jest": "^27.5.0",
     "@types/node": "^18.0.6",
     "@typescript-eslint/eslint-plugin": "^5.30.7",
     "@typescript-eslint/parser": "^5.30.7",
@@ -45,9 +37,18 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-sort-destructure-keys": "^1.4.0",
     "eslint-plugin-sort-keys-fix": "^1.1.2",
-    "eslint-plugin-typescript-sort-keys": "^2.1.0"
+    "eslint-plugin-typescript-sort-keys": "^2.1.0",
+    "jest": "^28.1.3",
+    "prettier": "^2.7.1",
+    "stylelint": "^14.9.1",
+    "stylelint-order": "^5.0.0",
+    "stylelint-prettier": "^2.0.0",
+    "ts-jest": "^28.0.7",
+    "ts-node": "^10.9.1",
+    "typescript": "4.7.4"
   },
   "dependencies": {
+    "aws-cdk": "^2.37.1",
     "aws-cdk-lib": "^2.0.0",
     "constructs": "^10.1.53",
     "source-map-support": "^0.5.21"
