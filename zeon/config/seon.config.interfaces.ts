@@ -23,7 +23,6 @@ export interface ServiceConfig {
     };
     max_healthy_percent: number;
     min_healthy_percent: number;
-    path: string;
     priority: number;
     task_props: FargateTaskDefinitionProps;
 }

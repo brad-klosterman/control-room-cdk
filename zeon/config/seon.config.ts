@@ -26,7 +26,6 @@ const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     },
     max_healthy_percent: 300,
     min_healthy_percent: 50,
-    path: '/graphql',
     priority: 10,
     task_props: {
         cpu: 256,
@@ -51,7 +50,6 @@ const ALARMS_SERVICE_CONFIG: ServiceConfig = {
     },
     max_healthy_percent: 300,
     min_healthy_percent: 50,
-    path: '/graphql',
     priority: 20,
     task_props: {
         cpu: 256,
@@ -76,7 +74,6 @@ const WORKFORCE_SERVICE_CONFIG: ServiceConfig = {
     },
     max_healthy_percent: 300,
     min_healthy_percent: 50,
-    path: '/graphql',
     priority: 20,
     task_props: {
         cpu: 256,
@@ -101,7 +98,6 @@ const SSP_SERVICE_CONFIG: ServiceConfig = {
     },
     max_healthy_percent: 300,
     min_healthy_percent: 50,
-    path: '/graphql',
     priority: 20,
     task_props: {
         cpu: 256,

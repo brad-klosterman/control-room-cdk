@@ -59,9 +59,10 @@ export class FargateService extends Construct {
         // SERVICE MESH or could Create
         this.virtual_node = mesh.getVirtualNode(props.service_namespace);
 
-        this.getServiceConfig();
+        this.service_config = getServiceConfig(this.service_namespace);
 
         this.configureSecurityGroup({
+            allowAllOutbound: true,
             securityGroupName: this.service_id + '-security-group',
             vpc: mesh.service_discovery.network.vpc,
         });
@@ -189,10 +190,6 @@ export class FargateService extends Construct {
             this.security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(port)),
         );
     };
-
-    getServiceConfig() {
-        this.service_config = getServiceConfig(this.service_namespace);
-    }
 
     configureSecurityGroup(security_group_props: SecurityGroupProps) {
         this.security_group = new ec2.SecurityGroup(
