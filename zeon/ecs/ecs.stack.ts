@@ -27,5 +27,15 @@ export class ECSStack extends BaseStack {
             ...shared_props,
             service_namespace: this.alarms_service_namespace,
         });
+
+        new FargateService(mesh, this.base_name + '-' + this.workforce_service_namespace, {
+            ...shared_props,
+            service_namespace: this.workforce_service_namespace,
+        });
+
+        new FargateService(mesh, this.base_name + '-' + this.ssp_service_namespace, {
+            ...shared_props,
+            service_namespace: this.ssp_service_namespace,
+        });
     }
 }

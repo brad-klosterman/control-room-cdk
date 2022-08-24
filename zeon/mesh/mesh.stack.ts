@@ -1,7 +1,7 @@
 import { StackProps } from 'aws-cdk-lib';
 import {
     Backend,
-    HttpRoutePathMatch,
+    HeaderMatch,
     Mesh,
     RouteSpec,
     VirtualNode,
@@ -20,92 +20,79 @@ export class MeshStack extends BaseStack {
     readonly service_discovery: DiscoveryStack;
     readonly mesh: Mesh;
     readonly virtual_node_listener: VirtualNodeListener;
-    readonly federation_virtual_node: VirtualNode;
-    readonly federation_virtual_router: VirtualRouter;
-    readonly federation_virtual_service: VirtualService;
 
-    readonly alarms_virtual_node: VirtualNode;
+    federation_virtual_node: VirtualNode;
+    federation_virtual_router: VirtualRouter;
+    federation_virtual_service: VirtualService;
+
+    // SUB GRAPHS
+    // subgraph_virtual_service: VirtualService;
+    // subgraph_virtual_router: VirtualRouter;
+
+    alarms_virtual_node: VirtualNode;
+    workforce_virtual_node: VirtualNode;
+    ssp_virtual_node: VirtualNode;
 
     constructor(service_discovery: DiscoveryStack, id: string, props?: StackProps) {
         super(service_discovery, id, props);
 
         this.service_discovery = service_discovery;
 
-        this.mesh = new Mesh(this, this.base_name + 'MESH', {
-            meshName: this.base_name + 'MESH',
+        this.mesh = new Mesh(this, this.base_name + '-mesh', {
+            meshName: this.base_name + '-mesh',
         });
 
         this.virtual_node_listener = VirtualNodeListener.http({
             port: this.main_port,
         });
 
-        this.federation_virtual_node = new VirtualNode(
-            this,
-            this.base_name + this.federation_service_namespace + '-vn',
-            this.buildVirtualNodeProps(this.federation_service_namespace),
-        );
+        this.configureFederationGateway();
 
-        this.alarms_virtual_node = new VirtualNode(
-            this,
-            this.base_name + this.alarms_service_namespace + '-vn',
-            this.buildVirtualNodeProps(this.alarms_service_namespace),
-        );
+        // FEDERATION
 
-        // ROUTERS
         this.federation_virtual_router = new VirtualRouter(
             this,
-            this.base_name + this.alarms_service_namespace + '-vr',
+            this.base_name + '-federation-vr',
             {
                 listeners: [this.virtual_node_listener],
                 mesh: this.mesh,
-                virtualRouterName: this.base_name + this.alarms_service_namespace + '-vr',
+                virtualRouterName: this.base_name + '-federation-vr',
             },
         );
 
-        // ROUTES
-        this.federation_virtual_router.addRoute(
-            this.base_name + this.alarms_service_namespace + '-route',
-            {
-                routeName: this.base_name + this.alarms_service_namespace + '-route',
-                routeSpec: RouteSpec.http({
-                    match: {
-                        path: HttpRoutePathMatch.exactly(
-                            'alarms.development.seon-gateway.com/graphql',
-                        ),
-                    },
-                    weightedTargets: [
-                        {
-                            virtualNode: this.alarms_virtual_node,
-                            weight: 1,
-                        },
-                    ],
-                }),
-            },
-        );
-
-        // SERVICES
+        /**
+         * Define a backend service for the federation gateway
+         */
         this.federation_virtual_service = new VirtualService(
             this,
-            this.base_name + this.federation_service_namespace + '-vs',
+            this.base_name + '-federation-vs',
             {
-                virtualServiceName: this.federation_service_namespace + '.local', // hostedZone.zoneName
+                virtualServiceName:
+                    this.federation_service_namespace +
+                    '.' +
+                    this.service_discovery.dns_hosted_zone.zoneName,
                 virtualServiceProvider: VirtualServiceProvider.virtualRouter(
                     this.federation_virtual_router,
                 ),
             },
         );
 
-        // BACKENDS
+        this.federation_virtual_node = new VirtualNode(
+            this,
+            this.base_name + '-federation-vn',
+            this.buildVirtualNodeProps(this.federation_service_namespace),
+        );
+
         this.federation_virtual_node.addBackend(
             Backend.virtualService(this.federation_virtual_service),
         );
 
-        // BACKENDS
+        // SUB GRAPHS
 
-        // backend to route to sub graphs
-
-        // backend for sub graphs to route back to gateway
+        this.configureSubGraphs();
     }
+
+    private configureFederationGateway() {}
 
     private buildVirtualNodeProps = (service_namespace: AvailableServices): VirtualNodeProps => {
         return {
@@ -122,8 +109,82 @@ export class MeshStack extends BaseStack {
                 return this.federation_virtual_node;
             case this.alarms_service_namespace:
                 return this.alarms_virtual_node;
+            case this.workforce_service_namespace:
+                return this.workforce_virtual_node;
+            case this.ssp_service_namespace:
+                return this.ssp_virtual_node;
             default:
                 return this.federation_virtual_node;
         }
+    }
+
+    private configureSubGraphs() {
+        // this.subgraph_virtual_router = new VirtualRouter(this, this.base_name + '-subgraph-vr', {
+        //     listeners: [this.virtual_node_listener],
+        //     mesh: this.mesh,
+        //     virtualRouterName: this.base_name + '-subgraph-vr',
+        // });
+
+        // this.subgraph_virtual_service = new VirtualService(this, this.base_name + '-subgraph-vs', {
+        //     virtualServiceName: 'subgraph.local', // hostedZone.zoneName
+        //     virtualServiceProvider: VirtualServiceProvider.virtualRouter(
+        //         this.subgraph_virtual_router,
+        //     ),
+        // });
+
+        // this.subgraph_virtual_router.addRoute(this.base_name + '-subgraph-route', {
+        //     routeName: this.base_name + '-subgraph-route',
+        //     routeSpec: RouteSpec.http({
+        //         weightedTargets: [
+        //             {
+        //                 virtualNode: this.federation_virtual_node,
+        //                 weight: 1,
+        //             },
+        //         ],
+        //     }),
+        // });
+
+        // SUBGRAPH VIRTUAL NODES
+        this.sub_graphs.forEach(sub_graph => {
+            const virtual_node = new VirtualNode(
+                this,
+                sub_graph + '-vn',
+                this.buildVirtualNodeProps(sub_graph),
+            );
+
+            this.federation_virtual_router.addRoute(this.base_name + '-' + sub_graph + '-route', {
+                routeName: sub_graph + '-route',
+                routeSpec: RouteSpec.http({
+                    match: {
+                        headers: [
+                            HeaderMatch.valueIs(
+                                'mesh-route',
+                                `https://${sub_graph}.development.seon-gateway.com/graphql`,
+                            ),
+                        ],
+                    },
+                    weightedTargets: [
+                        {
+                            virtualNode: virtual_node,
+                            weight: 1,
+                        },
+                    ],
+                }),
+            });
+
+            // virtual_node.addBackend(Backend.virtualService(this.subgraph_virtual_service));
+
+            if (sub_graph === this.alarms_service_namespace) {
+                this.alarms_virtual_node = virtual_node;
+            }
+
+            if (sub_graph === this.workforce_service_namespace) {
+                this.workforce_virtual_node = virtual_node;
+            }
+
+            if (sub_graph === this.ssp_service_namespace) {
+                this.ssp_virtual_node = virtual_node;
+            }
+        });
     }
 }

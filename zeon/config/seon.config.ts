@@ -1,22 +1,26 @@
 import { AvailableServices, ServiceConfig } from './seon.config.interfaces';
 
+const SHARED_ENV = {
+    APOLLO_GRAPH_REF: 'SEON@development',
+    APOLLO_KEY: 'service:SEON:mMJVKJ8jbZVbyx39tybPqg',
+    ENVIRONMENT: 'development',
+    GATEWAY_ENDPOINT: 'federation.development.seon-gateway.com',
+    PORT: '4000',
+    REDIS_HOST_ADDRESS: '',
+    SEON_REST_URL: 'https://api.staging.seon.network/',
+};
+
 const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'DNS',
-    health_check_url: '/.well-known/apollo/server-health',
+    health_check_url: '/health',
     host_header: 'federation.development.seon-gateway.com',
     main_container: {
         environment: {
-            APOLLO_GRAPH_REF: 'SEON@development',
-            APOLLO_KEY: 'service:SEON:mMJVKJ8jbZVbyx39tybPqg',
-            ENVIRONMENT: 'development',
-            GATEWAY_ENDPOINT: '',
-            PORT: '4000',
-            REDIS_HOST_ADDRESS: '',
-            SEON_REST_URL: 'https://api.staging.seon.network/',
+            ...SHARED_ENV,
         },
         github: {
-            branch: 'development', // todo
+            branch: 'development',
             repo: 'seon-federation-gateway',
         },
     },
@@ -38,17 +42,61 @@ const ALARMS_SERVICE_CONFIG: ServiceConfig = {
     host_header: 'alarms.development.seon-gateway.com',
     main_container: {
         environment: {
-            APOLLO_GRAPH_REF: 'SEON@development',
-            APOLLO_KEY: 'service:SEON:mMJVKJ8jbZVbyx39tybPqg',
-            ENVIRONMENT: 'development',
-            GATEWAY_ENDPOINT: 'federation.development.seon-gateway.com',
-            PORT: '4000',
-            REDIS_HOST_ADDRESS: '',
-            SEON_REST_URL: 'https://api.staging.seon.network/',
+            ...SHARED_ENV,
         },
         github: {
-            branch: 'development', // todo
+            branch: 'development',
             repo: 'seon-alarms-graph',
+        },
+    },
+    max_healthy_percent: 300,
+    min_healthy_percent: 50,
+    path: '/graphql',
+    priority: 20,
+    task_props: {
+        cpu: 256,
+        family: 'apollo',
+        memoryLimitMiB: 512,
+    },
+};
+
+const WORKFORCE_SERVICE_CONFIG: ServiceConfig = {
+    desired_count: 1,
+    discovery_type: 'CLOUDMAP',
+    health_check_url: '/.well-known/apollo/server-health',
+    host_header: 'workforce.development.seon-gateway.com',
+    main_container: {
+        environment: {
+            ...SHARED_ENV,
+        },
+        github: {
+            branch: 'development',
+            repo: 'seon-agents-graph',
+        },
+    },
+    max_healthy_percent: 300,
+    min_healthy_percent: 50,
+    path: '/graphql',
+    priority: 20,
+    task_props: {
+        cpu: 256,
+        family: 'apollo',
+        memoryLimitMiB: 512,
+    },
+};
+
+const SSP_SERVICE_CONFIG: ServiceConfig = {
+    desired_count: 1,
+    discovery_type: 'CLOUDMAP',
+    health_check_url: '/.well-known/apollo/server-health',
+    host_header: 'ssp.development.seon-gateway.com',
+    main_container: {
+        environment: {
+            ...SHARED_ENV,
+        },
+        github: {
+            branch: 'development',
+            repo: 'seon-ssp-customers-graph',
         },
     },
     max_healthy_percent: 300,
@@ -66,9 +114,9 @@ export const getServiceConfig = (service_namespace: AvailableServices): ServiceC
     const services = {
         'alarms-service': ALARMS_SERVICE_CONFIG,
         'federation-service': FEDERATION_SERVICE_CONFIG,
-        'ssp-service': FEDERATION_SERVICE_CONFIG,
+        'ssp-service': SSP_SERVICE_CONFIG,
         'subscriptions-service': FEDERATION_SERVICE_CONFIG,
-        'workforce-service': FEDERATION_SERVICE_CONFIG,
+        'workforce-service': WORKFORCE_SERVICE_CONFIG,
     };
 
     return services[service_namespace];

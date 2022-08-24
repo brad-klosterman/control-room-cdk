@@ -62,12 +62,13 @@ export class FargateService extends Construct {
         this.getServiceConfig();
 
         this.configureSecurityGroup({
+            securityGroupName: this.service_id + '-security-group',
             vpc: mesh.service_discovery.network.vpc,
         });
 
         this.security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(mesh.main_port));
 
-        this.allowIpv4IngressForTcpPorts([80, 8080]); // todo
+        this.allowIpv4IngressForTcpPorts([80, 443, 8080]); // todo
 
         this.configureTaskDefinition(
             {
@@ -114,7 +115,8 @@ export class FargateService extends Construct {
 
         // XRAY CONTAINER
         this.xray_container = this.configureContainer('xray-container', {
-            image: ecs.ContainerImage.fromRegistry('public.ecr.aws/xray/aws-xray-daemon:alpha'),
+            image: ecs.ContainerImage.fromRegistry('public.ecr.aws/xray/aws-xray-daemon:latest'),
+            // X-Ray traffic should not go through Envoy proxy
             portMappings: [
                 {
                     containerPort: 2000,
@@ -127,7 +129,7 @@ export class FargateService extends Construct {
         this.configureContainerDependencies();
 
         this.configureService({
-            assignPublicIp: false,
+            assignPublicIp: true,
             capacityProviderStrategies: [
                 {
                     base: 1,
@@ -152,24 +154,21 @@ export class FargateService extends Construct {
         if (this.service_config.discovery_type === 'DNS') {
             const listener = mesh.service_discovery.getListener(this.service_namespace);
 
-            this.service.registerLoadBalancerTargets({
-                containerName: this.main_container.containerName,
-                containerPort: mesh.main_port,
-                listener: ecs.ListenerConfig.applicationListener(listener, {
-                    conditions: [ListenerCondition.hostHeaders([this.service_config.host_header])],
-                    healthCheck: {
-                        healthyHttpCodes: '200,301,302',
-                        healthyThresholdCount: 2,
-                        interval: Duration.seconds(60),
-                        path: this.service_config.health_check_url,
-                        port: mesh.main_port.toString(),
-                        timeout: Duration.seconds(20),
-                        unhealthyThresholdCount: 2,
-                    },
-                    priority: this.service_config.priority,
-                    protocol: ApplicationProtocol.HTTP,
-                }),
-                newTargetGroupId: this.service_id + '-target-group',
+            listener.addTargets(this.service_id + '-target-group', {
+                conditions: [ListenerCondition.hostHeaders([this.service_config.host_header])],
+                healthCheck: {
+                    healthyHttpCodes: '200,301,302',
+                    healthyThresholdCount: 2,
+                    interval: Duration.seconds(60),
+                    path: this.service_config.health_check_url,
+                    port: mesh.main_port.toString(),
+                    timeout: Duration.seconds(20),
+                    unhealthyThresholdCount: 2,
+                },
+                port: mesh.main_port,
+                priority: this.service_config.priority,
+                protocol: ApplicationProtocol.HTTP,
+                targets: [this.service],
             });
         } else if (this.service_config.discovery_type === 'CLOUDMAP') {
             this.service.associateCloudMapService({
@@ -269,12 +268,10 @@ export class FargateService extends Construct {
             ecr_repo_name,
         );
 
-        const pipeline_name = (this.service_id + '-pipeline').toLowerCase();
-
-        new ECSPipeline(this.service, pipeline_name, {
+        new ECSPipeline(this.service, this.service_id + '-pipeline', {
             ...props,
             ecr: ecr_repo,
-            pipeline_name,
+            pipeline_name: this.service_id,
         });
     }
 }
@@ -313,4 +310,24 @@ export class FargateService extends Construct {
 //         ListenerCondition.pathPatterns([this.service_config.path]),
 //     ],
 //     priority: this.service_config.priority,
+// });
+
+// this.service.registerLoadBalancerTargets({
+//     containerName: this.main_container.containerName,
+//     containerPort: mesh.main_port,
+//     listener: ecs.ListenerConfig.applicationListener(listener, {
+//         conditions: [ListenerCondition.hostHeaders([this.service_config.host_header])],
+//         healthCheck: {
+//             healthyHttpCodes: '200,301,302',
+//             healthyThresholdCount: 2,
+//             interval: Duration.seconds(60),
+//             path: this.service_config.health_check_url,
+//             port: mesh.main_port.toString(),
+//             timeout: Duration.seconds(20),
+//             unhealthyThresholdCount: 2,
+//         },
+//         priority: this.service_config.priority,
+//         protocol: ApplicationProtocol.HTTP,
+//     }),
+//     newTargetGroupId: this.service_id + '-target-group',
 // });

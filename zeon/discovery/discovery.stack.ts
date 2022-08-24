@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import { StackProps } from 'aws-cdk-lib';
 import * as appmesh from 'aws-cdk-lib/aws-appmesh';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as loadBalancerV2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as route53 from 'aws-cdk-lib/aws-route53';
@@ -19,7 +18,10 @@ export class DiscoveryStack extends BaseStack {
     readonly dns_hosted_zone: route53.IHostedZone;
     readonly gateway_alb: elbv2.ApplicationLoadBalancer;
     readonly gateway_https_listener: elbv2.ApplicationListener;
+
     readonly alarms_service_cloudmap: service_discovery.Service;
+    readonly workforce_service_cloudmap: service_discovery.Service;
+    readonly ssp_service_cloudmap: service_discovery.Service;
 
     constructor(network: NetworkStack, id: string, props?: StackProps) {
         super(network, id, props);
@@ -88,16 +90,26 @@ export class DiscoveryStack extends BaseStack {
 
         this.private_dns = new service_discovery.PrivateDnsNamespace(
             this,
-            this.base_name + '-private-dns',
+            this.private_domain_namespace,
             {
-                name: 'local',
+                name: this.private_domain_namespace,
                 vpc: this.network.vpc,
             },
         );
 
         this.alarms_service_cloudmap = this.private_dns.createService(
-            this.base_name + this.alarms_service_namespace + '-cloudmap',
+            this.private_domain_namespace + '-' + this.alarms_service_namespace + '-cloudmap',
             this.buildDnsServiceProps(this.alarms_service_namespace),
+        );
+
+        this.workforce_service_cloudmap = this.private_dns.createService(
+            this.private_domain_namespace + '-' + this.workforce_service_namespace + '-cloudmap',
+            this.buildDnsServiceProps(this.workforce_service_namespace),
+        );
+
+        this.ssp_service_cloudmap = this.private_dns.createService(
+            this.private_domain_namespace + '-' + this.ssp_service_namespace + '-cloudmap',
+            this.buildDnsServiceProps(this.ssp_service_namespace),
         );
     }
 
@@ -126,6 +138,10 @@ export class DiscoveryStack extends BaseStack {
         switch (service_namespace) {
             case this.alarms_service_namespace:
                 return this.alarms_service_cloudmap;
+            case this.workforce_service_namespace:
+                return this.workforce_service_cloudmap;
+            case this.ssp_service_namespace:
+                return this.ssp_service_cloudmap;
             default:
                 return this.alarms_service_cloudmap;
         }
@@ -137,6 +153,10 @@ export class DiscoveryStack extends BaseStack {
                 return appmesh.ServiceDiscovery.dns(this.gateway_alb.loadBalancerDnsName);
             case this.alarms_service_namespace:
                 return appmesh.ServiceDiscovery.cloudMap(this.alarms_service_cloudmap);
+            case this.workforce_service_namespace:
+                return appmesh.ServiceDiscovery.cloudMap(this.workforce_service_cloudmap);
+            case this.ssp_service_namespace:
+                return appmesh.ServiceDiscovery.cloudMap(this.ssp_service_cloudmap);
             default:
                 return appmesh.ServiceDiscovery.dns(this.gateway_alb.loadBalancerDnsName);
         }
