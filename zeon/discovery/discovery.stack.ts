@@ -1,14 +1,22 @@
-import * as cdk from 'aws-cdk-lib';
-import { StackProps } from 'aws-cdk-lib';
-import * as appmesh from 'aws-cdk-lib/aws-appmesh';
-import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as loadBalancerV2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as route53 from 'aws-cdk-lib/aws-route53';
-import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
-import { Service } from 'aws-cdk-lib/aws-servicediscovery';
-import * as service_discovery from 'aws-cdk-lib/aws-servicediscovery';
+import { CfnOutput, Duration, StackProps } from 'aws-cdk-lib';
+import { ServiceDiscovery } from 'aws-cdk-lib/aws-appmesh';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { Peer, Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import {
+    ApplicationListener,
+    ApplicationLoadBalancer,
+    CfnListener,
+    ListenerAction,
+    ListenerCertificate,
+} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { ARecord, HostedZone, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { LoadBalancerTarget } from 'aws-cdk-lib/aws-route53-targets';
+import {
+    DnsRecordType,
+    DnsServiceProps,
+    PrivateDnsNamespace,
+    Service,
+} from 'aws-cdk-lib/aws-servicediscovery';
 
 import { BaseStack } from '../base/base.stack';
 import { AvailableServices } from '../config/seon.config.interfaces';
@@ -16,36 +24,32 @@ import { NetworkStack } from '../network/network.stack';
 
 export class DiscoveryStack extends BaseStack {
     readonly network: NetworkStack;
-    readonly private_dns: service_discovery.PrivateDnsNamespace;
-    readonly dns_hosted_zone: route53.IHostedZone;
+    readonly private_dns: PrivateDnsNamespace;
+    readonly dns_hosted_zone: IHostedZone;
 
-    gateway_alb: loadBalancerV2.ApplicationLoadBalancer;
+    gateway_alb: ApplicationLoadBalancer;
     gateway_alb_security: SecurityGroup;
-    gateway_https_listener: loadBalancerV2.ApplicationListener;
+    gateway_https_listener: ApplicationListener;
 
-    readonly alarms_service_cloudmap: service_discovery.Service;
-    readonly workforce_service_cloudmap: service_discovery.Service;
-    readonly ssp_service_cloudmap: service_discovery.Service;
+    readonly alarms_service_cloudmap: Service;
+    readonly workforce_service_cloudmap: Service;
+    readonly ssp_service_cloudmap: Service;
 
     constructor(network: NetworkStack, id: string, props?: StackProps) {
         super(network, id, props);
 
         this.network = network;
 
-        this.dns_hosted_zone = route53.HostedZone.fromLookup(this, this.base_name + '-dns-zone', {
+        this.dns_hosted_zone = HostedZone.fromLookup(this, this.base_name + '-dns-zone', {
             domainName: this.network.domain_name,
         });
 
         this.configureGatewayALB(this.base_name + '-gateway-alb');
 
-        this.private_dns = new service_discovery.PrivateDnsNamespace(
-            this,
-            this.private_domain_namespace,
-            {
-                name: this.private_domain_namespace,
-                vpc: this.network.vpc,
-            },
-        );
+        this.private_dns = new PrivateDnsNamespace(this, this.private_domain_namespace, {
+            name: this.private_domain_namespace,
+            vpc: this.network.vpc,
+        });
 
         this.alarms_service_cloudmap = this.configureDiscoveryService(
             this.alarms_service_namespace,
@@ -62,25 +66,25 @@ export class DiscoveryStack extends BaseStack {
         /**
          * Security group to provide a secure connection between the ALB and the containers
          */
-        this.gateway_alb_security = new ec2.SecurityGroup(this, alb_name + '-security', {
+        this.gateway_alb_security = new SecurityGroup(this, alb_name + '-security', {
             allowAllOutbound: true,
             securityGroupName: alb_name + '-security',
             vpc: this.network.vpc,
         });
 
         this.gateway_alb_security.addIngressRule(
-            ec2.Peer.anyIpv4(),
-            ec2.Port.tcp(443),
+            Peer.anyIpv4(),
+            Port.tcp(443),
             'Allow HTTPS Traffic',
         );
 
         this.gateway_alb_security.addIngressRule(
-            ec2.Peer.anyIpv4(),
-            ec2.Port.tcp(80),
+            Peer.anyIpv4(),
+            Port.tcp(80),
             'Allow HTTP Traffic',
         );
 
-        this.gateway_alb = new loadBalancerV2.ApplicationLoadBalancer(this, alb_name, {
+        this.gateway_alb = new ApplicationLoadBalancer(this, alb_name, {
             internetFacing: true,
             loadBalancerName: alb_name,
             securityGroup: this.gateway_alb_security,
@@ -89,22 +93,22 @@ export class DiscoveryStack extends BaseStack {
 
         this.gateway_https_listener = this.gateway_alb.addListener(alb_name + '-443-listener', {
             certificates: [
-                loadBalancerV2.ListenerCertificate.fromArn(
-                    acm.Certificate.fromCertificateArn(
+                ListenerCertificate.fromArn(
+                    Certificate.fromCertificateArn(
                         this,
                         alb_name + '-certificate',
                         this.domain_certificate_arn,
                     ).certificateArn,
                 ),
             ],
-            defaultAction: loadBalancerV2.ListenerAction.fixedResponse(200, {
+            defaultAction: ListenerAction.fixedResponse(200, {
                 messageBody: alb_name + ' --default response-- ',
             }),
             open: true,
             port: 443,
         });
 
-        new loadBalancerV2.CfnListener(this, alb_name + '-80-listener', {
+        new CfnListener(this, alb_name + '-80-listener', {
             defaultActions: [
                 {
                     redirectConfig: {
@@ -120,17 +124,15 @@ export class DiscoveryStack extends BaseStack {
             protocol: 'HTTP',
         });
 
-        new route53.ARecord(this, alb_name + `-alias-record`, {
+        new ARecord(this, alb_name + `-alias-record`, {
             recordName: this.base_stage,
-            target: route53.RecordTarget.fromAlias(
-                new route53targets.LoadBalancerTarget(this.gateway_alb),
-            ),
-            ttl: cdk.Duration.seconds(60),
+            target: RecordTarget.fromAlias(new LoadBalancerTarget(this.gateway_alb)),
+            ttl: Duration.seconds(60),
             zone: this.dns_hosted_zone,
         });
 
         // Output the DNS name where you can access the gateway
-        new cdk.CfnOutput(this, alb_name + '-alb-dns', {
+        new CfnOutput(this, alb_name + '-alb-dns', {
             value: this.gateway_alb.loadBalancerDnsName,
         });
     }
@@ -142,19 +144,17 @@ export class DiscoveryStack extends BaseStack {
         );
     }
 
-    private buildDnsServiceProps = (
-        service_namespace: AvailableServices,
-    ): service_discovery.DnsServiceProps => {
+    private buildDnsServiceProps = (service_namespace: AvailableServices): DnsServiceProps => {
         return {
             customHealthCheck: {
                 failureThreshold: 1,
             },
-            dnsRecordType: service_discovery.DnsRecordType.A,
+            dnsRecordType: DnsRecordType.A,
             name: service_namespace,
         };
     };
 
-    public getListener(service_namespace: AvailableServices): loadBalancerV2.ApplicationListener {
+    public getListener(service_namespace: AvailableServices): ApplicationListener {
         switch (service_namespace) {
             case this.federation_service_namespace:
                 return this.gateway_https_listener;
@@ -163,7 +163,7 @@ export class DiscoveryStack extends BaseStack {
         }
     }
 
-    public getCloudMapService(service_namespace: AvailableServices): service_discovery.Service {
+    public getCloudMapService(service_namespace: AvailableServices): Service {
         switch (service_namespace) {
             case this.alarms_service_namespace:
                 return this.alarms_service_cloudmap;
@@ -176,24 +176,18 @@ export class DiscoveryStack extends BaseStack {
         }
     }
 
-    public getServiceDiscovery(service_name: string): appmesh.ServiceDiscovery {
+    public getServiceDiscovery(service_name: string): ServiceDiscovery {
         switch (service_name) {
             case this.federation_service_namespace:
-                return appmesh.ServiceDiscovery.dns(this.gateway_alb.loadBalancerDnsName);
+                return ServiceDiscovery.dns(this.gateway_alb.loadBalancerDnsName);
             case this.alarms_service_namespace:
-                return appmesh.ServiceDiscovery.cloudMap(this.alarms_service_cloudmap);
+                return ServiceDiscovery.cloudMap(this.alarms_service_cloudmap);
             case this.workforce_service_namespace:
-                return appmesh.ServiceDiscovery.cloudMap(this.workforce_service_cloudmap);
+                return ServiceDiscovery.cloudMap(this.workforce_service_cloudmap);
             case this.ssp_service_namespace:
-                return appmesh.ServiceDiscovery.cloudMap(this.ssp_service_cloudmap);
+                return ServiceDiscovery.cloudMap(this.ssp_service_cloudmap);
             default:
-                return appmesh.ServiceDiscovery.dns(this.gateway_alb.loadBalancerDnsName);
+                return ServiceDiscovery.dns(this.gateway_alb.loadBalancerDnsName);
         }
     }
 }
-
-// this.gateway_https_listener.addAction(this.base_name + 'ALB-DEFAULT-RESPONSE', {
-//     action: loadBalancerV2.ListenerAction.fixedResponse(404, {
-//         messageBody: 'SEON DEVELOPMENT 404',
-//     }),
-// });

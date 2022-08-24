@@ -1,18 +1,24 @@
 import { Duration } from 'aws-cdk-lib';
 import { VirtualNode } from 'aws-cdk-lib/aws-appmesh';
-import { SecurityGroupProps } from 'aws-cdk-lib/aws-ec2';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as ecr from 'aws-cdk-lib/aws-ecr';
+import { Peer, Port, SecurityGroup, SecurityGroupProps } from 'aws-cdk-lib/aws-ec2';
+import { IRepository, Repository } from 'aws-cdk-lib/aws-ecr';
 import {
+    AppMeshProxyConfiguration,
+    Cluster,
+    ContainerDefinition,
     ContainerDefinitionOptions,
+    ContainerDependencyCondition,
     ContainerImage,
+    FargateService,
     FargateServiceProps,
+    FargateTaskDefinition,
     LogDriver,
+    Protocol,
+    UlimitName,
 } from 'aws-cdk-lib/aws-ecs';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { FargateTaskDefinitionProps } from 'aws-cdk-lib/aws-ecs/lib/fargate/fargate-task-definition';
 import { ApplicationProtocol, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as iam from 'aws-cdk-lib/aws-iam';
+import { Role } from 'aws-cdk-lib/aws-iam';
 import { ILogGroup } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
@@ -22,7 +28,7 @@ import { MeshStack } from '../../mesh/mesh.stack';
 import { ECSPipeline } from '../../pipeline/ecs.pipeline';
 import { EnvoyContainer } from '../containers/envoy.container';
 
-export class FargateService extends Construct {
+export class FargateMeshService extends Construct {
     service_namespace: AvailableServices;
     service_id: string;
     service_config: ServiceConfig;
@@ -31,23 +37,23 @@ export class FargateService extends Construct {
     // SERVICE MESH
     readonly virtual_node: VirtualNode;
 
-    security_group: ec2.SecurityGroup;
-    task_definition: ecs.FargateTaskDefinition;
-    service: ecs.FargateService;
+    security_group: SecurityGroup;
+    task_definition: FargateTaskDefinition;
+    service: FargateService;
 
-    main_container: ecs.ContainerDefinition;
-    envoy_container: ecs.ContainerDefinition;
-    xray_container: ecs.ContainerDefinition;
+    main_container: ContainerDefinition;
+    envoy_container: ContainerDefinition;
+    xray_container: ContainerDefinition;
 
     constructor(
         mesh: MeshStack,
         id: string,
         props: {
-            cluster: ecs.Cluster;
-            execution_role: iam.Role;
+            cluster: Cluster;
+            execution_role: Role;
             log_group: ILogGroup;
             service_namespace: AvailableServices;
-            task_role: iam.Role;
+            task_role: Role;
         },
     ) {
         super(mesh, id);
@@ -67,7 +73,7 @@ export class FargateService extends Construct {
             vpc: mesh.service_discovery.network.vpc,
         });
 
-        this.security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(mesh.main_port));
+        this.security_group.addIngressRule(Peer.anyIpv4(), Port.tcp(mesh.main_port));
 
         this.allowIpv4IngressForTcpPorts([80, 443, 8080]); // todo
 
@@ -75,7 +81,7 @@ export class FargateService extends Construct {
             {
                 cpu: this.service_config.task_props.cpu,
                 executionRole: props.execution_role,
-                family: this.service_config.task_props.family,
+                family: this.service_id,
                 memoryLimitMiB: this.service_config.task_props.memoryLimitMiB,
                 taskRole: props.task_role,
             },
@@ -94,7 +100,7 @@ export class FargateService extends Construct {
                 {
                     containerPort: mesh.main_port,
                     hostPort: mesh.main_port, // todo
-                    protocol: ecs.Protocol.TCP,
+                    protocol: Protocol.TCP,
                 },
             ],
         });
@@ -110,18 +116,18 @@ export class FargateService extends Construct {
 
         this.envoy_container.addUlimits({
             hardLimit: 15000,
-            name: ecs.UlimitName.NOFILE,
+            name: UlimitName.NOFILE,
             softLimit: 15000,
         });
 
         // XRAY CONTAINER
         this.xray_container = this.configureContainer('xray-container', {
-            image: ecs.ContainerImage.fromRegistry('public.ecr.aws/xray/aws-xray-daemon:latest'),
+            image: ContainerImage.fromRegistry('public.ecr.aws/xray/aws-xray-daemon:latest'),
             // X-Ray traffic should not go through Envoy proxy
             portMappings: [
                 {
                     containerPort: 2000,
-                    protocol: ecs.Protocol.UDP,
+                    protocol: Protocol.UDP,
                 },
             ],
             user: '1337',
@@ -186,13 +192,11 @@ export class FargateService extends Construct {
     }
 
     private allowIpv4IngressForTcpPorts = (ports: number[]): void => {
-        ports.forEach(port =>
-            this.security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(port)),
-        );
+        ports.forEach(port => this.security_group.addIngressRule(Peer.anyIpv4(), Port.tcp(port)));
     };
 
     configureSecurityGroup(security_group_props: SecurityGroupProps) {
-        this.security_group = new ec2.SecurityGroup(
+        this.security_group = new SecurityGroup(
             this,
             this.service_id + '-security-group',
             security_group_props,
@@ -200,12 +204,12 @@ export class FargateService extends Construct {
     }
 
     configureTaskDefinition(task_definition_props: FargateTaskDefinitionProps, ports: number[]) {
-        this.task_definition = new ecs.FargateTaskDefinition(
+        this.task_definition = new FargateTaskDefinition(
             this,
             this.service_id + '-task-definition',
             {
                 ...task_definition_props,
-                proxyConfiguration: new ecs.AppMeshProxyConfiguration({
+                proxyConfiguration: new AppMeshProxyConfiguration({
                     containerName: this.service_id + '-envoy-container',
                     properties: {
                         appPorts: ports,
@@ -234,23 +238,23 @@ export class FargateService extends Construct {
 
     configureContainerDependencies() {
         this.main_container.addContainerDependencies({
-            condition: ecs.ContainerDependencyCondition.HEALTHY,
+            condition: ContainerDependencyCondition.HEALTHY,
             container: this.envoy_container,
         });
 
         this.main_container.addContainerDependencies({
-            condition: ecs.ContainerDependencyCondition.START,
+            condition: ContainerDependencyCondition.START,
             container: this.xray_container,
         });
 
         this.envoy_container.addContainerDependencies({
-            condition: ecs.ContainerDependencyCondition.START,
+            condition: ContainerDependencyCondition.START,
             container: this.xray_container,
         });
     }
 
     configureService(service_props: FargateServiceProps) {
-        this.service = new ecs.FargateService(this, this.service_id, service_props);
+        this.service = new FargateService(this, this.service_id, service_props);
     }
 
     configurePipeline(props: {
@@ -259,7 +263,7 @@ export class FargateService extends Construct {
     }) {
         const ecr_repo_name = this.service_id.toLowerCase() + '-ecr';
 
-        const ecr_repo: ecr.IRepository = ecr.Repository.fromRepositoryName(
+        const ecr_repo: IRepository = Repository.fromRepositoryName(
             this,
             ecr_repo_name,
             ecr_repo_name,

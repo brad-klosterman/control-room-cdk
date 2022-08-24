@@ -29,7 +29,6 @@ const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     priority: 10,
     task_props: {
         cpu: 256,
-        family: 'apollo',
         memoryLimitMiB: 512,
     },
 };
@@ -53,7 +52,6 @@ const ALARMS_SERVICE_CONFIG: ServiceConfig = {
     priority: 20,
     task_props: {
         cpu: 256,
-        family: 'apollo',
         memoryLimitMiB: 512,
     },
 };
@@ -77,7 +75,6 @@ const WORKFORCE_SERVICE_CONFIG: ServiceConfig = {
     priority: 20,
     task_props: {
         cpu: 256,
-        family: 'apollo',
         memoryLimitMiB: 512,
     },
 };
@@ -101,7 +98,6 @@ const SSP_SERVICE_CONFIG: ServiceConfig = {
     priority: 20,
     task_props: {
         cpu: 256,
-        family: 'apollo',
         memoryLimitMiB: 512,
     },
 };

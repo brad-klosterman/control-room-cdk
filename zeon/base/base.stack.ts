@@ -1,5 +1,4 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 import { AvailableServices } from '../config/seon.config.interfaces';
@@ -35,6 +34,9 @@ export class BaseStack extends Stack {
             this.account
         }:certificate/${this.node.tryGetContext('certificate_identifier')}`;
 
+        /**
+         * Port used for microservice communication
+         */
         this.main_port = 4000;
 
         this.federation_service_namespace = 'federation-service';
