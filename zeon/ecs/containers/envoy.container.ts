@@ -12,15 +12,15 @@ export class EnvoyContainer extends Construct {
         id: string,
         props: {
             app_ports: number[];
-            appMeshResourceArn: string;
             enableXrayTracing: boolean;
+            virtualNodeArn: string;
         },
     ) {
         super(mesh, id);
 
         this.options = {
             environment: {
-                APPMESH_RESOURCE_ARN: props.appMeshResourceArn,
+                APPMESH_RESOURCE_ARN: props.virtualNodeArn,
                 ENABLE_ENVOY_STATS_TAGS: '1',
                 ENABLE_ENVOY_XRAY_TRACING: props.enableXrayTracing ? '1' : '0',
                 ENVOY_LOG_LEVEL: 'debug',

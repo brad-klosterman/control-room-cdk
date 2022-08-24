@@ -101,9 +101,9 @@ export class DiscoveryStack extends BaseStack {
                     ).certificateArn,
                 ),
             ],
-            defaultAction: ListenerAction.fixedResponse(200, {
-                messageBody: alb_name + ' --default response-- ',
-            }),
+            // defaultAction: ListenerAction.fixedResponse(200, {
+            //     messageBody: alb_name + ' --default response-- ',
+            // }),
             open: true,
             port: 443,
         });
@@ -176,8 +176,11 @@ export class DiscoveryStack extends BaseStack {
         }
     }
 
-    public getServiceDiscovery(service_name: string): ServiceDiscovery {
-        switch (service_name) {
+    /**
+     * Provides the Service Discovery method a VirtualNode uses
+     */
+    public getNodeDiscovery(service_namespace: string): ServiceDiscovery {
+        switch (service_namespace) {
             case this.federation_service_namespace:
                 return ServiceDiscovery.dns(this.gateway_alb.loadBalancerDnsName);
             case this.alarms_service_namespace:

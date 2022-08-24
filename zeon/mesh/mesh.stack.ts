@@ -2,7 +2,9 @@ import { StackProps } from 'aws-cdk-lib';
 import {
     Backend,
     HeaderMatch,
+    HttpRoutePathMatch,
     Mesh,
+    MeshFilterType,
     RouteSpec,
     VirtualNode,
     VirtualNodeListener,
@@ -25,10 +27,6 @@ export class MeshStack extends BaseStack {
     federation_virtual_router: VirtualRouter;
     federation_virtual_service: VirtualService;
 
-    // SUB GRAPHS
-    // subgraph_virtual_service: VirtualService;
-    // subgraph_virtual_router: VirtualRouter;
-
     alarms_virtual_node: VirtualNode;
     workforce_virtual_node: VirtualNode;
     ssp_virtual_node: VirtualNode;
@@ -38,7 +36,11 @@ export class MeshStack extends BaseStack {
 
         this.service_discovery = service_discovery;
 
+        /**
+         * A service mesh is a logical boundary for network traffic between the services that reside within it.
+         */
         this.mesh = new Mesh(this, this.base_name + '-mesh', {
+            egressFilter: MeshFilterType.ALLOW_ALL,
             meshName: this.base_name + '-mesh',
         });
 
@@ -46,10 +48,9 @@ export class MeshStack extends BaseStack {
             port: this.main_port,
         });
 
-        this.configureFederationGateway();
-
-        // FEDERATION
-
+        /**
+         * Virtual router that handles traffic for a virtual service.
+         */
         this.federation_virtual_router = new VirtualRouter(
             this,
             this.base_name + '-federation-vr',
@@ -68,14 +69,18 @@ export class MeshStack extends BaseStack {
             this.base_name + '-federation-vs',
             {
                 virtualServiceName:
-                    this.federation_service_namespace +
-                    '.' +
-                    this.service_discovery.dns_hosted_zone.zoneName,
+                    this.federation_service_namespace + '.' + this.private_domain_namespace,
                 virtualServiceProvider: VirtualServiceProvider.virtualRouter(
                     this.federation_virtual_router,
                 ),
             },
         );
+
+        /**
+         * A virtual node acts as a logical pointer to a particular task group (ECS)
+         * - Accept inbound traffic by specifying a listener
+         * - Outbound traffic that your virtual node expects to send should be specified as a back end.
+         */
 
         this.federation_virtual_node = new VirtualNode(
             this,
@@ -92,13 +97,11 @@ export class MeshStack extends BaseStack {
         this.configureSubGraphs();
     }
 
-    private configureFederationGateway() {}
-
     private buildVirtualNodeProps = (service_namespace: AvailableServices): VirtualNodeProps => {
         return {
             listeners: [this.virtual_node_listener],
             mesh: this.mesh,
-            serviceDiscovery: this.service_discovery.getServiceDiscovery(service_namespace),
+            serviceDiscovery: this.service_discovery.getNodeDiscovery(service_namespace),
             virtualNodeName: service_namespace + '-vn',
         };
     };
@@ -119,32 +122,6 @@ export class MeshStack extends BaseStack {
     }
 
     private configureSubGraphs() {
-        // this.subgraph_virtual_router = new VirtualRouter(this, this.base_name + '-subgraph-vr', {
-        //     listeners: [this.virtual_node_listener],
-        //     mesh: this.mesh,
-        //     virtualRouterName: this.base_name + '-subgraph-vr',
-        // });
-
-        // this.subgraph_virtual_service = new VirtualService(this, this.base_name + '-subgraph-vs', {
-        //     virtualServiceName: 'subgraph.local', // hostedZone.zoneName
-        //     virtualServiceProvider: VirtualServiceProvider.virtualRouter(
-        //         this.subgraph_virtual_router,
-        //     ),
-        // });
-
-        // this.subgraph_virtual_router.addRoute(this.base_name + '-subgraph-route', {
-        //     routeName: this.base_name + '-subgraph-route',
-        //     routeSpec: RouteSpec.http({
-        //         weightedTargets: [
-        //             {
-        //                 virtualNode: this.federation_virtual_node,
-        //                 weight: 1,
-        //             },
-        //         ],
-        //     }),
-        // });
-
-        // SUBGRAPH VIRTUAL NODES
         this.sub_graphs.forEach(sub_graph => {
             const virtual_node = new VirtualNode(
                 this,
@@ -156,12 +133,7 @@ export class MeshStack extends BaseStack {
                 routeName: sub_graph + '-route',
                 routeSpec: RouteSpec.http({
                     match: {
-                        headers: [
-                            HeaderMatch.valueIs(
-                                'mesh-route',
-                                `https://${sub_graph}.development.seon-gateway.com/graphql`,
-                            ),
-                        ],
+                        path: HttpRoutePathMatch.startsWith(`/${sub_graph}`),
                     },
                     weightedTargets: [
                         {
@@ -171,8 +143,6 @@ export class MeshStack extends BaseStack {
                     ],
                 }),
             });
-
-            // virtual_node.addBackend(Backend.virtualService(this.subgraph_virtual_service));
 
             if (sub_graph === this.alarms_service_namespace) {
                 this.alarms_virtual_node = virtual_node;
@@ -188,3 +158,10 @@ export class MeshStack extends BaseStack {
         });
     }
 }
+
+// headers: [
+//     HeaderMatch.valueIs(
+//         'mesh-route',
+//         `https://${sub_graph}.development.seon-gateway.com/graphql`,
+//     ),
+// ],

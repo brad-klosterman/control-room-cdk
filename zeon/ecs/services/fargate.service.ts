@@ -12,6 +12,7 @@ import {
     FargateService,
     FargateServiceProps,
     FargateTaskDefinition,
+    ListenerConfig,
     LogDriver,
     Protocol,
     UlimitName,
@@ -32,9 +33,7 @@ export class FargateMeshService extends Construct {
     service_namespace: AvailableServices;
     service_id: string;
     service_config: ServiceConfig;
-    log_group: ILogGroup;
-
-    // SERVICE MESH
+    readonly log_group: ILogGroup;
     readonly virtual_node: VirtualNode;
 
     security_group: SecurityGroup;
@@ -62,7 +61,6 @@ export class FargateMeshService extends Construct {
         this.service_id = mesh.base_name + '-' + this.service_namespace;
         this.log_group = props.log_group;
 
-        // SERVICE MESH or could Create
         this.virtual_node = mesh.getVirtualNode(props.service_namespace);
 
         this.service_config = getServiceConfig(this.service_namespace);
@@ -75,7 +73,7 @@ export class FargateMeshService extends Construct {
 
         this.security_group.addIngressRule(Peer.anyIpv4(), Port.tcp(mesh.main_port));
 
-        this.allowIpv4IngressForTcpPorts([80, 443, 8080]); // todo
+        this.allowIpv4IngressForTcpPorts([80, 443, 8080]); // todo better port security
 
         this.configureTaskDefinition(
             {
@@ -88,7 +86,9 @@ export class FargateMeshService extends Construct {
             [mesh.main_port],
         );
 
-        // MAIN CONTAINER
+        /**
+         * Main Container
+         */
         this.main_container = this.configureContainer('main-container', {
             environment: {
                 ...this.service_config.main_container.environment,
@@ -105,12 +105,14 @@ export class FargateMeshService extends Construct {
             ],
         });
 
-        // ENVOY CONTAINER
+        /**
+         * Envoy Container
+         */
         this.envoy_container = this.configureContainer('envoy-container', {
             ...new EnvoyContainer(mesh, this.service_id + '-envoy-sidecar', {
                 app_ports: [mesh.main_port],
-                appMeshResourceArn: this.virtual_node.virtualNodeArn,
                 enableXrayTracing: true,
+                virtualNodeArn: this.virtual_node.virtualNodeArn,
             }).options,
         });
 
@@ -120,7 +122,9 @@ export class FargateMeshService extends Construct {
             softLimit: 15000,
         });
 
-        // XRAY CONTAINER
+        /**
+         * XRay Container
+         */
         this.xray_container = this.configureContainer('xray-container', {
             image: ContainerImage.fromRegistry('public.ecr.aws/xray/aws-xray-daemon:latest'),
             // X-Ray traffic should not go through Envoy proxy
@@ -161,21 +165,24 @@ export class FargateMeshService extends Construct {
         if (this.service_config.discovery_type === 'DNS') {
             const listener = mesh.service_discovery.getListener(this.service_namespace);
 
-            listener.addTargets(this.service_id + '-target-group', {
-                conditions: [ListenerCondition.hostHeaders([this.service_config.host_header])],
-                healthCheck: {
-                    healthyHttpCodes: '200,301,302',
-                    healthyThresholdCount: 2,
-                    interval: Duration.seconds(60),
-                    path: this.service_config.health_check_url,
-                    port: mesh.main_port.toString(),
-                    timeout: Duration.seconds(20),
-                    unhealthyThresholdCount: 2,
-                },
-                port: mesh.main_port,
-                priority: this.service_config.priority,
-                protocol: ApplicationProtocol.HTTP,
-                targets: [this.service],
+            this.service.registerLoadBalancerTargets({
+                containerName: this.main_container.containerName,
+                containerPort: mesh.main_port,
+                listener: ListenerConfig.applicationListener(listener, {
+                    // conditions: [ListenerCondition.hostHeaders([this.service_config.host_header])],
+                    healthCheck: {
+                        healthyHttpCodes: '200,301,302',
+                        healthyThresholdCount: 2,
+                        interval: Duration.seconds(60),
+                        path: this.service_config.health_check_url,
+                        port: mesh.main_port.toString(),
+                        timeout: Duration.seconds(20),
+                        unhealthyThresholdCount: 2,
+                    },
+                    // priority: this.service_config.priority,
+                    protocol: ApplicationProtocol.HTTP,
+                }),
+                newTargetGroupId: this.service_id + '-target-group',
             });
         } else if (this.service_config.discovery_type === 'CLOUDMAP') {
             this.service.associateCloudMapService({
@@ -331,4 +338,22 @@ export class FargateMeshService extends Construct {
 //         protocol: ApplicationProtocol.HTTP,
 //     }),
 //     newTargetGroupId: this.service_id + '-target-group',
+// });
+
+// listener.addTargets(this.service_id + '-target-group', {
+//     // this might not work bc
+//     // conditions: [ListenerCondition.hostHeaders([this.service_config.host_header])],
+//     healthCheck: {
+//         healthyHttpCodes: '200,301,302',
+//         healthyThresholdCount: 2,
+//         interval: Duration.seconds(60),
+//         path: this.service_config.health_check_url,
+//         port: mesh.main_port.toString(),
+//         timeout: Duration.seconds(20),
+//         unhealthyThresholdCount: 2,
+//     },
+//     port: mesh.main_port,
+//     priority: this.service_config.priority,
+//     protocol: ApplicationProtocol.HTTP,
+//     targets: [this.service],
 // });

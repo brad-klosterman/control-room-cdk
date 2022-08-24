@@ -13,7 +13,7 @@ const SHARED_ENV = {
 const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'DNS',
-    health_check_url: '/health',
+    health_check_url: '/mesh-health',
     host_header: 'federation.development.seon-gateway.com',
     main_container: {
         environment: {
@@ -36,7 +36,7 @@ const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
 const ALARMS_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'CLOUDMAP',
-    health_check_url: '/.well-known/apollo/server-health',
+    health_check_url: '/mesh-health',
     host_header: 'alarms.development.seon-gateway.com',
     main_container: {
         environment: {
