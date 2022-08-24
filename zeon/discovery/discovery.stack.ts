@@ -6,11 +6,17 @@ import {
     ApplicationListener,
     ApplicationLoadBalancer,
     CfnListener,
-    ListenerAction,
     ListenerCertificate,
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { ARecord, HostedZone, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import {
+    ARecord,
+    HostedZone,
+    IHostedZone,
+    PrivateHostedZone,
+    RecordTarget,
+} from 'aws-cdk-lib/aws-route53';
 import { LoadBalancerTarget } from 'aws-cdk-lib/aws-route53-targets';
+import { IPrivateHostedZone } from 'aws-cdk-lib/aws-route53/lib/hosted-zone';
 import {
     DnsRecordType,
     DnsServiceProps,
@@ -25,6 +31,7 @@ import { NetworkStack } from '../network/network.stack';
 export class DiscoveryStack extends BaseStack {
     readonly network: NetworkStack;
     readonly private_dns: PrivateDnsNamespace;
+    readonly private_hosted_zone: IPrivateHostedZone;
     readonly dns_hosted_zone: IHostedZone;
 
     gateway_alb: ApplicationLoadBalancer;
@@ -40,14 +47,25 @@ export class DiscoveryStack extends BaseStack {
 
         this.network = network;
 
-        this.dns_hosted_zone = HostedZone.fromLookup(this, this.base_name + '-dns-zone', {
+        this.dns_hosted_zone = HostedZone.fromLookup(this, this.base_name + '-dns-hosted-zone', {
             domainName: this.network.domain_name,
         });
 
+        // Create an Amazon Route53 hosted zone.
+        // This hosted zone is used to avoid an IP address lookup error.
+        this.private_hosted_zone = new PrivateHostedZone(
+            this,
+            this.base_name + '-private-hosted-zone',
+            {
+                vpc: this.network.vpc,
+                zoneName: this.base_stage + '-appmesh.local',
+            },
+        );
+
         this.configureGatewayALB(this.base_name + '-gateway-alb');
 
-        this.private_dns = new PrivateDnsNamespace(this, this.private_domain_namespace, {
-            name: this.private_domain_namespace,
+        this.private_dns = new PrivateDnsNamespace(this, this.base_name + '-private-dns', {
+            name: this.base_stage + '-cloudmap.local',
             vpc: this.network.vpc,
         });
 
@@ -139,7 +157,7 @@ export class DiscoveryStack extends BaseStack {
 
     private configureDiscoveryService(service_namespace: AvailableServices): Service {
         return this.private_dns.createService(
-            this.private_domain_namespace + '-' + service_namespace + '-cloudmap',
+            this.base_name + '-' + service_namespace + '-cloudmap',
             this.buildDnsServiceProps(service_namespace),
         );
     }

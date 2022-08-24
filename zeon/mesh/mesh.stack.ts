@@ -13,6 +13,7 @@ import {
     VirtualService,
     VirtualServiceProvider,
 } from 'aws-cdk-lib/aws-appmesh';
+import { ARecord, RecordTarget } from 'aws-cdk-lib/aws-route53';
 
 import { BaseStack } from '../base/base.stack';
 import { AvailableServices } from '../config/seon.config.interfaces';
@@ -64,17 +65,30 @@ export class MeshStack extends BaseStack {
         /**
          * Define a backend service for the federation gateway
          */
+
+        const federation_virtual_service_name =
+            this.federation_service_namespace +
+            '.' +
+            this.service_discovery.private_hosted_zone.zoneName;
+
         this.federation_virtual_service = new VirtualService(
             this,
             this.base_name + '-federation-vs',
             {
-                virtualServiceName:
-                    this.federation_service_namespace + '.' + this.private_domain_namespace,
+                virtualServiceName: federation_virtual_service_name,
                 virtualServiceProvider: VirtualServiceProvider.virtualRouter(
                     this.federation_virtual_router,
                 ),
             },
         );
+
+        // Create an A record to the hosted zone to avoid the IP address lookup error.
+        // https://docs.aws.amazon.com/app-mesh/latest/userguide/troubleshoot-connectivity.html
+        new ARecord(this, federation_virtual_service_name + '-a-record', {
+            recordName: federation_virtual_service_name,
+            target: RecordTarget.fromIpAddresses('10.10.10.10'),
+            zone: this.service_discovery.private_hosted_zone,
+        });
 
         /**
          * A virtual node acts as a logical pointer to a particular task group (ECS)

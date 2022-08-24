@@ -11,7 +11,6 @@ export interface ServiceConfig {
     desired_count: number;
     discovery_type: 'DNS' | 'CLOUDMAP';
     health_check_url: string;
-    host_header: string;
     main_container: {
         environment: {
             [key: string]: string;

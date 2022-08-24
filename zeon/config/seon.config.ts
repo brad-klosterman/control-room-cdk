@@ -14,7 +14,6 @@ const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'DNS',
     health_check_url: '/mesh-health',
-    host_header: 'federation.development.seon-gateway.com',
     main_container: {
         environment: {
             ...SHARED_ENV,
@@ -37,7 +36,6 @@ const ALARMS_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'CLOUDMAP',
     health_check_url: '/mesh-health',
-    host_header: 'alarms.development.seon-gateway.com',
     main_container: {
         environment: {
             ...SHARED_ENV,
@@ -60,7 +58,6 @@ const WORKFORCE_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'CLOUDMAP',
     health_check_url: '/.well-known/apollo/server-health',
-    host_header: 'workforce.development.seon-gateway.com',
     main_container: {
         environment: {
             ...SHARED_ENV,
@@ -83,7 +80,6 @@ const SSP_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'CLOUDMAP',
     health_check_url: '/.well-known/apollo/server-health',
-    host_header: 'ssp.development.seon-gateway.com',
     main_container: {
         environment: {
             ...SHARED_ENV,

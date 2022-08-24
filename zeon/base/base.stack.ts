@@ -7,7 +7,6 @@ export class BaseStack extends Stack {
     base_name: string;
     base_stage: string;
     domain_name: string;
-    private_domain_namespace: string;
     domain_certificate_arn: string;
     main_port: number;
 
@@ -28,7 +27,6 @@ export class BaseStack extends Stack {
         this.base_stage = this.node.tryGetContext('STAGE');
 
         this.domain_name = 'seon-gateway.com';
-        this.private_domain_namespace = this.base_stage + '-mesh';
 
         this.domain_certificate_arn = `arn:aws:acm:${this.region}:${
             this.account
