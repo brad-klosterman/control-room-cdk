@@ -1,7 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 
+import { DemoStack } from './demo/demo.stack';
 import { DiscoveryStack } from './discovery/discovery.stack';
 import { ECSStack } from './ecs/ecs.stack';
+import { RedisStack } from './elasticache/redis.stack';
 import { MeshStack } from './mesh/mesh.stack';
 import { NetworkStack } from './network/network.stack';
 
@@ -15,31 +17,44 @@ const APP_ENV = {
     region: 'eu-central-1',
 };
 
-const network_stack = new NetworkStack(APP, APP_NAME + 'NETWORK-stack', {
+const network_stack = new NetworkStack(APP, APP_NAME + '-network-stack', {
     description: 'Defines the Network Infrastructure.',
     env: APP_ENV,
-    stackName: APP_NAME + '-NETWORK-stack',
+    stackName: APP_NAME + '-NETWORK',
 });
 
-const discovery_stack = new DiscoveryStack(network_stack, APP_NAME + 'DISCOVERY-stack', {
+const discovery_stack = new DiscoveryStack(network_stack, APP_NAME + '-discovery-stack', {
     description: 'Defines the Application Load Balancers and the CloudMap Service.',
     env: APP_ENV,
-    stackName: APP_NAME + '-DISCOVERY-stack',
+    stackName: APP_NAME + '-DISCOVERY',
 });
 
-const mesh_stack = new MeshStack(discovery_stack, APP_NAME + 'MESH-stack', {
+const redis_stack = new RedisStack(network_stack, APP_NAME + '-redis-stack', {
+    description: 'Defines the Redis Elasticache Group',
+    env: APP_ENV,
+    stackName: APP_NAME + '-REDIS',
+});
+
+const mesh_stack = new MeshStack(discovery_stack, APP_NAME + '-mesh-stack', {
     description: 'Defines Mesh Components like the Virtual Nodes, Routers and Services.',
     env: APP_ENV,
-    stackName: APP_NAME + '-MESH-stack',
+    stackName: APP_NAME + '-MESH',
 });
 
-const ecs_stack = new ECSStack(mesh_stack, APP_NAME + 'ECS-stack', {
+const ecs_stack = new ECSStack(mesh_stack, APP_NAME + '-ecs-stack', {
     description: 'Defines the Fargate Services and Their Task Definitions.',
     env: APP_ENV,
-    stackName: APP_NAME + '-ECS-stack',
+    stackName: APP_NAME + '-ECS',
+});
+
+const demo_stack = new DemoStack(APP, APP_NAME + '-demo-stack', {
+    description: 'Demo stack with Dynamo SQS and EventBridge.',
+    env: APP_ENV,
+    stackName: APP_NAME + '-DEMO',
 });
 
 discovery_stack.addDependency(network_stack);
+redis_stack.addDependency(network_stack);
 mesh_stack.addDependency(discovery_stack);
 ecs_stack.addDependency(mesh_stack);
 

@@ -23,7 +23,7 @@ export class ECSPipeline extends Construct {
     ) {
         super(service, id);
 
-        this.pipeline = new Pipeline(this, props.pipeline_name, {
+        this.pipeline = new Pipeline(this, props.pipeline_name + '--pipeline', {
             crossAccountKeys: true,
             pipelineName: props.pipeline_name,
         });
@@ -53,7 +53,7 @@ export class ECSPipeline extends Construct {
 
         const deploy_action = new actions.EcsDeployAction({
             actionName: props.container.name + 'DEPLOY',
-            deploymentTimeout: cdk.Duration.minutes(10),
+            deploymentTimeout: cdk.Duration.minutes(20),
             imageFile: new codepipeline.ArtifactPath(build_output, `imagedefinitions.json`),
             service,
         });
@@ -122,7 +122,7 @@ export class ECSPipeline extends Construct {
             }),
             environment: {
                 buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_3,
-                computeType: codebuild.ComputeType.SMALL,
+                computeType: codebuild.ComputeType.LARGE,
                 privileged: true,
             },
             environmentVariables: {

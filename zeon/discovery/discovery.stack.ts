@@ -32,6 +32,11 @@ export class DiscoveryStack extends BaseStack {
     readonly network: NetworkStack;
     readonly private_dns: PrivateDnsNamespace;
     readonly private_hosted_zone: IPrivateHostedZone;
+
+    /**
+     * dns_hosted_zone
+     * - A hosted zone is a container that holds information about how you want to route traffic
+     */
     readonly dns_hosted_zone: IHostedZone;
 
     gateway_alb: ApplicationLoadBalancer;
@@ -51,8 +56,11 @@ export class DiscoveryStack extends BaseStack {
             domainName: this.network.domain_name,
         });
 
-        // Create an Amazon Route53 hosted zone.
-        // This hosted zone is used to avoid an IP address lookup error.
+        /**
+         * Create an Amazon Route53 private hosted zone.
+         * - Used to find mesh virtual service
+         * - Used to avoid an IP address lookup error.
+         */
         this.private_hosted_zone = new PrivateHostedZone(
             this,
             this.base_name + '-private-hosted-zone',
@@ -64,6 +72,10 @@ export class DiscoveryStack extends BaseStack {
 
         this.configureGatewayALB(this.base_name + '-gateway-alb');
 
+        /**
+         * Service discovery for cloud resources
+         * - Define namespace for resources so that the applications can dynamically discover them.
+         */
         this.private_dns = new PrivateDnsNamespace(this, this.base_name + '-private-dns', {
             name: this.base_stage + '-cloudmap.local',
             vpc: this.network.vpc,

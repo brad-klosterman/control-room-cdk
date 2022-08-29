@@ -3,17 +3,18 @@ import { AvailableServices, ServiceConfig } from './seon.config.interfaces';
 const SHARED_ENV = {
     APOLLO_GRAPH_REF: 'SEON@development',
     APOLLO_KEY: 'service:SEON:mMJVKJ8jbZVbyx39tybPqg',
+    AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
     ENVIRONMENT: 'development',
-    GATEWAY_ENDPOINT: 'federation.development.seon-gateway.com',
+    GATEWAY_ENDPOINT: 'development.seon-gateway.com/graphql',
     PORT: '4000',
-    REDIS_HOST_ADDRESS: '',
+    REDIS_HOST_ADDRESS: 'sesi50gr1hf9510.s1azzv.ng.0001.euc1.cache.amazonaws.com',
     SEON_REST_URL: 'https://api.staging.seon.network/',
 };
 
 const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'DNS',
-    health_check_url: '/mesh-health',
+    health_check_url: '/mesh/health',
     main_container: {
         environment: {
             ...SHARED_ENV,
@@ -35,7 +36,7 @@ const FEDERATION_SERVICE_CONFIG: ServiceConfig = {
 const ALARMS_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'CLOUDMAP',
-    health_check_url: '/mesh-health',
+    health_check_url: '/mesh/health',
     main_container: {
         environment: {
             ...SHARED_ENV,
@@ -57,7 +58,7 @@ const ALARMS_SERVICE_CONFIG: ServiceConfig = {
 const WORKFORCE_SERVICE_CONFIG: ServiceConfig = {
     desired_count: 1,
     discovery_type: 'CLOUDMAP',
-    health_check_url: '/.well-known/apollo/server-health',
+    health_check_url: '/.well-known/apollo/server-health', // not setup yet
     main_container: {
         environment: {
             ...SHARED_ENV,
@@ -100,11 +101,11 @@ const SSP_SERVICE_CONFIG: ServiceConfig = {
 
 export const getServiceConfig = (service_namespace: AvailableServices): ServiceConfig => {
     const services = {
-        'alarms-service': ALARMS_SERVICE_CONFIG,
-        'federation-service': FEDERATION_SERVICE_CONFIG,
-        'ssp-service': SSP_SERVICE_CONFIG,
-        'subscriptions-service': FEDERATION_SERVICE_CONFIG,
-        'workforce-service': WORKFORCE_SERVICE_CONFIG,
+        alarms: ALARMS_SERVICE_CONFIG,
+        events: FEDERATION_SERVICE_CONFIG,
+        federation: FEDERATION_SERVICE_CONFIG,
+        ssp: SSP_SERVICE_CONFIG,
+        workforce: WORKFORCE_SERVICE_CONFIG,
     };
 
     return services[service_namespace];

@@ -1,4 +1,4 @@
-import { Duration } from 'aws-cdk-lib';
+import { aws_applicationautoscaling, Duration } from 'aws-cdk-lib';
 import { VirtualNode } from 'aws-cdk-lib/aws-appmesh';
 import { Peer, Port, SecurityGroup, SecurityGroupProps } from 'aws-cdk-lib/aws-ec2';
 import { IRepository, Repository } from 'aws-cdk-lib/aws-ecr';
@@ -40,8 +40,19 @@ export class FargateMeshService extends Construct {
     task_definition: FargateTaskDefinition;
     service: FargateService;
 
+    /**
+     * main_container
+     */
     main_container: ContainerDefinition;
+
+    /**
+     * envoy_container
+     */
     envoy_container: ContainerDefinition;
+
+    /**
+     * xray_container
+     */
     xray_container: ContainerDefinition;
 
     constructor(
@@ -83,7 +94,7 @@ export class FargateMeshService extends Construct {
                 memoryLimitMiB: this.service_config.task_props.memoryLimitMiB,
                 taskRole: props.task_role,
             },
-            [mesh.main_port],
+            [mesh.main_port, 443, 80],
         );
 
         /**
@@ -162,6 +173,26 @@ export class FargateMeshService extends Construct {
             taskDefinition: this.task_definition,
         });
 
+        /*
+         * Auto Scaling
+         *
+         * scale out when CPU utilization exceeds 50%
+         * increase scale out speed if CPU utilization exceeds 70%
+         * scale in again when CPU utilization falls below 10%.
+         */
+        // const scaling = this.service.autoScaleTaskCount({ maxCapacity: 6 });
+        // const cpu_utilization = this.service.metricCpuUtilization();
+        //
+        // scaling.scaleOnMetric(this.service_id + '-auto-scaling-metrics', {
+        //     adjustmentType: aws_applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
+        //     metric: cpu_utilization,
+        //     scalingSteps: [
+        //         { change: -1, upper: 10 },
+        //         { change: +1, lower: 60 },
+        //         { change: +3, lower: 85 },
+        //     ],
+        // });
+
         if (this.service_config.discovery_type === 'DNS') {
             const listener = mesh.service_discovery.getListener(this.service_namespace);
 
@@ -181,6 +212,7 @@ export class FargateMeshService extends Construct {
                     },
                     // priority: this.service_config.priority,
                     protocol: ApplicationProtocol.HTTP,
+                    stickinessCookieDuration: Duration.hours(1),
                 }),
                 newTargetGroupId: this.service_id + '-target-group',
             });
