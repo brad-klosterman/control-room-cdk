@@ -1,6 +1,8 @@
 import { RemovalPolicy, StackProps } from 'aws-cdk-lib';
 import { SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Cluster } from 'aws-cdk-lib/aws-ecs';
+import { Rule } from 'aws-cdk-lib/aws-events';
+import { CloudWatchLogGroup } from 'aws-cdk-lib/aws-events-targets';
 import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { IManagedPolicy } from 'aws-cdk-lib/aws-iam/lib/managed-policy';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -31,17 +33,24 @@ export class NetworkStack extends BaseStack {
     readonly log_group: LogGroup;
 
     /**
-     * cluster
+     * ECS Cluster: A logical grouping of tasks or services
+     * * SEON: https://eu-central-1.console.aws.amazon.com/ecs/v2/clusters?region=eu-central-1
      */
     readonly cluster: Cluster;
 
     /**
-     * task_role
+     * IAM Task Role: ECS Task role
+     * - The ECS Task Role is used by the service that is deployed to ECS
+     * * SEON: https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/home
      */
     readonly task_role: Role;
 
     /**
-     * execution_role
+     * IAM Execution Role
+     * - The ECS Execution Role is used by the ecs-agent which runs on ECS and is responsible for:
+     *  -- Pulling down docker images from ECR
+     *  -- Fetching the SSM Parameters from SSM for your Task (Secrets and LogConfigurations)
+     *  -- Writing Logs to CloudWatch
      */
     readonly execution_role: Role;
 
@@ -49,7 +58,7 @@ export class NetworkStack extends BaseStack {
         super(scope, id, props);
 
         /**
-         * Configure the VPC
+         * VPC
          */
         this.vpc = new Vpc(this, this.base_name + '-vpc', {
             cidr: '10.0.0.0/16',
@@ -70,7 +79,7 @@ export class NetworkStack extends BaseStack {
         });
 
         /**
-         * Create a log group for all microservices
+         * CloudWatch Log Group
          */
         this.log_group = new LogGroup(this, this.base_name + '-log-group', {
             logGroupName: this.base_name,
@@ -78,6 +87,17 @@ export class NetworkStack extends BaseStack {
             retention: RetentionDays.ONE_DAY,
         });
 
+        // const rule = new Rule(this, 'rule', {
+        //     eventPattern: {
+        //         source: ['aws.ec2'],
+        //     },
+        // });
+        //
+        // rule.addTarget(new CloudWatchLogGroup(this.log_group));
+
+        /**
+         * ECS Cluster
+         */
         this.cluster = new Cluster(this, this.base_name + '-ecs-cluster', {
             clusterName: this.base_name + '-cluster',
             containerInsights: true,
@@ -85,6 +105,9 @@ export class NetworkStack extends BaseStack {
             vpc: this.vpc,
         });
 
+        /**
+         * IAM ECS Task Role
+         */
         this.task_role = new Role(this, this.base_name + '-ecs-task-role', {
             assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
             managedPolicies: this.addManagedPolices(
@@ -95,6 +118,9 @@ export class NetworkStack extends BaseStack {
             ),
         });
 
+        /**
+         * IAM ECS Execution Role
+         */
         this.execution_role = new Role(this, this.base_name + '-ecs-execution_role', {
             assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
             managedPolicies: this.addManagedPolices(

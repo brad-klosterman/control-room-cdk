@@ -9,6 +9,10 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 export class ECSPipeline extends Construct {
+    /**
+     * https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_codepipeline-readme.html
+     * * SEON: https://eu-central-1.console.aws.amazon.com/codesuite/codepipeline/pipelines?region=eu-central-1
+     */
     pipeline: Pipeline;
 
     constructor(

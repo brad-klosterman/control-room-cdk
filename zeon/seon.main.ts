@@ -47,12 +47,6 @@ const ecs_stack = new ECSStack(mesh_stack, APP_NAME + '-ecs-stack', {
     stackName: APP_NAME + '-ECS',
 });
 
-const demo_stack = new DemoStack(APP, APP_NAME + '-demo-stack', {
-    description: 'Demo stack with Dynamo SQS and EventBridge.',
-    env: APP_ENV,
-    stackName: APP_NAME + '-DEMO',
-});
-
 discovery_stack.addDependency(network_stack);
 redis_stack.addDependency(network_stack);
 mesh_stack.addDependency(discovery_stack);

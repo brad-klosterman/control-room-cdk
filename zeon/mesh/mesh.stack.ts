@@ -60,26 +60,6 @@ export class MeshStack extends BaseStack {
     federation_subgraph_router: VirtualRouter;
     federation_subgraph_service: VirtualService;
 
-    /**
-     * Routes traffic from the Federation Gateway to the uplink virtual node
-     */
-    apollo_uplink_virtual_node: VirtualNode;
-
-    /**
-     * Routes traffic from the Federation Gateway to the uplink virtual node
-     */
-    apollo_uplink_service: VirtualService;
-
-    /**
-     * Routes traffic from the Federation Gateway to the uplink virtual node
-     */
-    external_virtual_node: VirtualNode;
-
-    /**
-     * Routes traffic from the Federation Gateway to the uplink virtual node
-     */
-    external_service: VirtualService;
-
     alarms_virtual_node: VirtualNode;
     workforce_virtual_node: VirtualNode;
     ssp_virtual_node: VirtualNode;
@@ -90,7 +70,7 @@ export class MeshStack extends BaseStack {
         this.service_discovery = service_discovery;
 
         this.mesh = new Mesh(this, this.base_name + '-mesh', {
-            egressFilter: MeshFilterType.DROP_ALL, // ALLOW_SPECIFIED
+            egressFilter: MeshFilterType.ALLOW_ALL, // ALLOW_SPECIFIED
             meshName: this.base_name + '-mesh',
         });
 
@@ -121,69 +101,14 @@ export class MeshStack extends BaseStack {
         );
 
         /**
-         * Routes traffic to the Apollo Uplink external API
-         */
-        this.apollo_uplink_virtual_node = new VirtualNode(this, this.base_name + '-apollo-uplink', {
-            listeners: [
-                VirtualNodeListener.tcp({
-                    port: 443,
-                }),
-            ],
-            mesh: this.mesh,
-            serviceDiscovery: ServiceDiscovery.dns(
-                'aws.uplink.api.apollographql.com',
-                DnsResponseType.LOAD_BALANCER,
-                IpPreference.IPV4_ONLY,
-            ),
-            virtualNodeName: 'apollo-uplink',
-        });
-
-        /**
-         * Federation Gateway Backend to the Apollo Uplink virtual node
-         */
-        this.apollo_uplink_service = new VirtualService(
-            this,
-            this.base_name + '-apollo-uplink-vs',
-            {
-                virtualServiceName: 'aws.uplink.api.apollographql.com',
-                virtualServiceProvider: VirtualServiceProvider.virtualNode(
-                    this.apollo_uplink_virtual_node,
-                ),
-            },
-        );
-
-        this.external_virtual_node = new VirtualNode(this, this.base_name + '-external-vn', {
-            listeners: [
-                VirtualNodeListener.tcp({
-                    port: 443,
-                }),
-            ],
-            mesh: this.mesh,
-            serviceDiscovery: ServiceDiscovery.dns(
-                'mocki.io',
-                DnsResponseType.LOAD_BALANCER,
-                IpPreference.IPV4_ONLY,
-            ),
-            virtualNodeName: 'external',
-        });
-
-        /**
-         * Routes traffic from the Federation Gateway to the external virtual node
-         */
-        this.external_service = new VirtualService(this, this.base_name + '-external-vs', {
-            virtualServiceName: 'mocki.io',
-            virtualServiceProvider: VirtualServiceProvider.virtualNode(this.external_virtual_node),
-        });
-
-        /**
          * Add the backend services to the Federated Gateway
          */
         this.federation_virtual_node.addBackend(
             Backend.virtualService(this.federation_subgraph_service),
         );
 
-        this.federation_virtual_node.addBackend(Backend.virtualService(this.external_service));
-        this.federation_virtual_node.addBackend(Backend.virtualService(this.apollo_uplink_service));
+        // this.federation_virtual_node.addBackend(Backend.virtualService(this.external_service));
+        // this.federation_virtual_node.addBackend(Backend.virtualService(this.apollo_uplink_service));
 
         this.configureSubGraphs();
     }
@@ -224,35 +149,6 @@ export class MeshStack extends BaseStack {
 
         return virtual_service;
     }
-
-    // private configureExternalRoute({
-    //     name,
-    //     path_match,
-    //     url,
-    // }: {
-    //     name: string;
-    //     path_match: HttpRoutePathMatch;
-    //     url: string;
-    // }): RouteSpec {
-    //     const external_virtual_node = new VirtualNode(this, this.base_name + '-' + name, {
-    //         listeners: [this.virtual_node_listener],
-    //         mesh: this.mesh,
-    //         serviceDiscovery: ServiceDiscovery.dns(url),
-    //         virtualNodeName: name,
-    //     });
-    //
-    //     return (this.apollo_uplink_route_spec = RouteSpec.http({
-    //         match: {
-    //             path: path_match,
-    //         },
-    //         weightedTargets: [
-    //             {
-    //                 virtualNode: external_virtual_node,
-    //                 weight: 1,
-    //             },
-    //         ],
-    //     }));
-    // }
 
     private configureSubGraphs() {
         this.sub_graphs.forEach(sub_graph => {
@@ -315,3 +211,78 @@ export class MeshStack extends BaseStack {
         }
     }
 }
+
+/**
+ * Routes traffic to the Apollo Uplink external API
+ */
+// this.apollo_uplink_virtual_node = new VirtualNode(this, this.base_name + '-apollo-uplink', {
+//     listeners: [
+//         VirtualNodeListener.tcp({
+//             port: 443,
+//         }),
+//     ],
+//     mesh: this.mesh,
+//     serviceDiscovery: ServiceDiscovery.dns(
+//         'aws.uplink.api.apollographql.com',
+//         DnsResponseType.LOAD_BALANCER,
+//         IpPreference.IPV4_ONLY,
+//     ),
+//     virtualNodeName: 'apollo-uplink',
+// });
+//
+// /**
+//  * Federation Gateway Backend to the Apollo Uplink virtual node
+//  */
+// this.apollo_uplink_service = new VirtualService(
+//     this,
+//     this.base_name + '-apollo-uplink-vs',
+//     {
+//         virtualServiceName: 'aws.uplink.api.apollographql.com',
+//         virtualServiceProvider: VirtualServiceProvider.virtualNode(
+//             this.apollo_uplink_virtual_node,
+//         ),
+//     },
+// );
+//
+// this.external_virtual_node = new VirtualNode(this, this.base_name + '-external-vn', {
+//     listeners: [
+//         VirtualNodeListener.tcp({
+//             port: 443,
+//         }),
+//     ],
+//     mesh: this.mesh,
+//     serviceDiscovery: ServiceDiscovery.dns(
+//         'mocki.io',
+//         DnsResponseType.LOAD_BALANCER,
+//         IpPreference.IPV4_ONLY,
+//     ),
+//     virtualNodeName: 'external',
+// });
+//
+// /**
+//  * Routes traffic from the Federation Gateway to the external virtual node
+//  */
+// this.external_service = new VirtualService(this, this.base_name + '-external-vs', {
+//     virtualServiceName: 'mocki.io',
+//     virtualServiceProvider: VirtualServiceProvider.virtualNode(this.external_virtual_node),
+// });
+
+// /**
+//  * Routes traffic from the Federation Gateway to the uplink virtual node
+//  */
+// apollo_uplink_virtual_node: VirtualNode;
+//
+// /**
+//  * Routes traffic from the Federation Gateway to the uplink virtual node
+//  */
+// apollo_uplink_service: VirtualService;
+//
+// /**
+//  * Routes traffic from the Federation Gateway to the uplink virtual node
+//  */
+// external_virtual_node: VirtualNode;
+//
+// /**
+//  * Routes traffic from the Federation Gateway to the uplink virtual node
+//  */
+// external_service: VirtualService;

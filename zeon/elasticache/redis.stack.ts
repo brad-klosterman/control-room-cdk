@@ -9,6 +9,11 @@ import { NetworkStack } from '../network/network.stack';
 export class RedisStack extends BaseStack {
     readonly network: NetworkStack;
 
+    /**
+     * CDK: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_elasticache-readme.html
+     * SEON: https://eu-central-1.console.aws.amazon.com/elasticache/home?region=eu-central-1#/redis
+     */
+
     constructor(network: NetworkStack, id: string, props?: StackProps) {
         super(network, id, props);
 

@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { join } from 'path';
 
 import { Duration, RemovalPolicy, StackProps } from 'aws-cdk-lib';
@@ -9,23 +10,45 @@ import {
     ProjectionType,
     Table,
 } from 'aws-cdk-lib/aws-dynamodb';
-import { EventBus, Rule } from 'aws-cdk-lib/aws-events';
-import { SqsQueue } from 'aws-cdk-lib/aws-events-targets';
+import { ContainerImage } from 'aws-cdk-lib/aws-ecs';
+import { EventBus, Rule, RuleTargetInput } from 'aws-cdk-lib/aws-events';
+import { BatchJob, SqsQueue } from 'aws-cdk-lib/aws-events-targets';
 import { AccountRootPrincipal } from 'aws-cdk-lib/aws-iam';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { IFunction } from 'aws-cdk-lib/aws-lambda';
-import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { DynamoEventSource, SqsDlq, SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import { LambdaSubscription, SqsSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { IQueue, Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 
 import { BaseStack } from '../base/base.stack';
 
 export class DemoStack extends BaseStack {
+    /**
+     * Dynamo DB Table
+     * * CDK: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_dynamodb-readme.html
+     * * SEON: https://eu-central-1.console.aws.amazon.com/dynamodbv2/home?region=eu-central-1#tables
+     */
     public readonly alarms_table: Table;
     public readonly responders_table: Table;
     public readonly devices_table: Table;
-    assignment_queue: IQueue;
+
+    /**
+     * SNS Subscriptions: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_sns_subscriptions-readme.html
+     */
+
+    /**
+     * SQS https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_sqs-readme.html
+     */
+    responders_queue: IQueue;
+
+    /**
+     * Event Bridge
+     * - Delivers a near real-time stream of system events that describe changes in AWS resources.
+     * https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_events-readme.html
+     */
 
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
@@ -100,29 +123,131 @@ export class DemoStack extends BaseStack {
         this.devices_table.grantReadData(new AccountRootPrincipal());
 
         /**
-         * Event Bus
+         * Define an EventBridge EventBus
          * https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_events-readme.html
          */
         const bus = new EventBus(this, this.base_name + '-event-bus', {
-            eventBusName: 'event-bus',
+            eventBusName: 'seon-event-bus',
         });
-
-        // create a rule that listens for the db being updated
-
-        // the
 
         /**
-         * Assignment Queue
+         * It is possible to archive all or some events sent to an event bus. It is then possible to replay these events.
          */
-        this.assignment_queue = new Queue(this, this.base_name + '-assignment-queue', {
-            queueName: 'assignment-queue',
-            visibilityTimeout: Duration.seconds(30),
+        bus.archive('bus-archive', {
+            archiveName: 'archive',
+            description: 'Bus Archive',
+            eventPattern: {
+                account: [],
+            },
+            retention: Duration.days(365),
         });
 
-        // consumer.addEventSource(
-        //     new SqsEventSource(this.assignment_queue, {
-        //         batchSize: 1,
-        //     }),
-        // );
+        /**
+         * SNS Topic
+         */
+        const topic = new Topic(this, 'sns-topic', {
+            displayName: 'Alarm Handeling',
+            topicName: 'alarm-handeling',
+        });
+
+        const alarm_created_rule = new Rule(this, 'alarm-created-rule', {
+            description: 'When Alarms microservice created and Alarm',
+            enabled: true,
+            eventBus: bus,
+            eventPattern: {
+                detailType: ['alarm_created'],
+                source: ['development.seon-gateway.alarms:4000'],
+            },
+            ruleName: 'alarm_created',
+        });
+
+        /**
+         * Responders Queue
+         */
+        this.responders_queue = new Queue(this, this.base_name + '-responders-queue', {
+            queueName: 'responders-queue',
+        });
+
+        // subscribe queue to topic
+        topic.addSubscription(new SqsSubscription(this.responders_queue));
+
+        /**
+         * You can write Lambda functions to process change events from a DynamoDB Table.
+         * An event is emitted to a DynamoDB stream (if configured) whenever a write
+         * (Put, Delete, Update) operation is performed against the table.
+         */
+
+        const deadLetterQueue = new Queue(this, 'deadLetterQueue');
+
+        // create lambda function
+        const lambda_fn = new NodejsFunction(this, 'my-lambda', {
+            entry: path.join(__dirname, `,/lamda.ts`),
+            handler: 'main',
+            memorySize: 1024,
+            runtime: lambda.Runtime.NODEJS_14_X,
+            timeout: Duration.seconds(5),
+        });
+
+        lambda_fn.addEventSource(
+            new DynamoEventSource(this.alarms_table, {
+                batchSize: 5,
+                bisectBatchOnError: true,
+                onFailure: new SqsDlq(deadLetterQueue),
+                retryAttempts: 10,
+                startingPosition: lambda.StartingPosition.TRIM_HORIZON,
+            }),
+        );
+
+        // subscribe Lambda to SNS topic
+        topic.addSubscription(new LambdaSubscription(lambda_fn));
+
+        const rule = new Rule(this, 'Rule', {
+            schedule: Schedule.expression('rate(1 minute)'),
+        });
+
+        // rule.addTarget(topic);
+
+        /*
+
+        const jobQueue = new batch.JobQueue(this, 'MyQueue', {
+            computeEnvironments: [
+                {
+                    computeEnvironment: new batch.ComputeEnvironment(this, 'ComputeEnvironment', {
+                        managed: false,
+                    }),
+                    order: 1,
+                },
+            ],
+        });
+
+        const jobDefinition = new JobDefinition(this, 'MyJob', {
+            container: {
+                image: ContainerImage.fromRegistry('test-repo'),
+            },
+        });
+
+        const queue = new Queue(this, 'Queue');
+
+        const rule = new Rule(this, 'Rule', {
+            schedule: Schedule.rate(Duration.hours(1)),
+        });
+
+        rule.addTarget(
+            new BatchJob(
+                jobQueue.jobQueueArn,
+                jobQueue,
+                jobDefinition.jobDefinitionArn,
+                jobDefinition,
+                {
+                    deadLetterQueue: queue,
+                    event: RuleTargetInput.fromObject({ SomeParam: 'SomeValue' }),
+                    maxEventAge: Duration.hours(2),
+                    retryAttempts: 2,
+                },
+            ),
+        );
+
+        8?
+         */
     }
 }

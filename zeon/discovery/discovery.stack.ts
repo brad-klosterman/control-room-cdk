@@ -29,20 +29,49 @@ import { AvailableServices } from '../config/seon.config.interfaces';
 import { NetworkStack } from '../network/network.stack';
 
 export class DiscoveryStack extends BaseStack {
+    /**
+     * Network Stack: VPC, IAM
+     */
     readonly network: NetworkStack;
+
+    /**
+     * Service Discovery Namespace for cloud resources
+     * Define namespace for resources so that the applications can dynamically discover them.
+     */
     readonly private_dns: PrivateDnsNamespace;
+
+    /**
+     * Amazon Route53 Private Hosted Zone.
+     * - Used to find mesh virtual service
+     * - Used to avoid an IP address lookup error.
+     */
     readonly private_hosted_zone: IPrivateHostedZone;
 
     /**
-     * dns_hosted_zone
-     * - A hosted zone is a container that holds information about how you want to route traffic
+     * Amazon Route53 Public Hosted Zone.
+     * - A container that holds information about how you want to route traffic
+     * - Used with the ALB
      */
     readonly dns_hosted_zone: IHostedZone;
 
+    /**
+     * Application Load Balancer
+     * SEON: https://eu-central-1.console.aws.amazon.com/ec2/v2/home?region=eu-central-1#LoadBalancers:sort=loadBalancerName
+     */
     gateway_alb: ApplicationLoadBalancer;
     gateway_alb_security: SecurityGroup;
+
+    /**
+     * A listener is a process that checks for connection requests, using the protocol and port that you configure.
+     * The rules that you define for a listener determine how the load balancer routes requests to its registered targets.
+     */
     gateway_https_listener: ApplicationListener;
 
+    /**
+     * CloudMap Namespaces
+     * A namespace that applications can use to dynamically discover each other
+     * SEON: https://eu-central-1.console.aws.amazon.com/cloudmap/home/namespaces?region=eu-central-1
+     */
     readonly alarms_service_cloudmap: Service;
     readonly workforce_service_cloudmap: Service;
     readonly ssp_service_cloudmap: Service;
@@ -56,11 +85,6 @@ export class DiscoveryStack extends BaseStack {
             domainName: this.network.domain_name,
         });
 
-        /**
-         * Create an Amazon Route53 private hosted zone.
-         * - Used to find mesh virtual service
-         * - Used to avoid an IP address lookup error.
-         */
         this.private_hosted_zone = new PrivateHostedZone(
             this,
             this.base_name + '-private-hosted-zone',
@@ -73,7 +97,6 @@ export class DiscoveryStack extends BaseStack {
         this.configureGatewayALB(this.base_name + '-gateway-alb');
 
         /**
-         * Service discovery for cloud resources
          * - Define namespace for resources so that the applications can dynamically discover them.
          */
         this.private_dns = new PrivateDnsNamespace(this, this.base_name + '-private-dns', {

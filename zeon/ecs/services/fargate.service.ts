@@ -42,6 +42,7 @@ export class FargateMeshService extends Construct {
 
     /**
      * main_container
+     * * https://eu-central-1.console.aws.amazon.com/ecs/v2/clusters/SEON-development-cluster/services?region=eu-central-1
      */
     main_container: ContainerDefinition;
 
@@ -52,6 +53,7 @@ export class FargateMeshService extends Construct {
 
     /**
      * xray_container
+     * SEON: https://eu-central-1.console.aws.amazon.com/xray/home?region=eu-central-1#/service-map
      */
     xray_container: ContainerDefinition;
 
@@ -180,18 +182,18 @@ export class FargateMeshService extends Construct {
          * increase scale out speed if CPU utilization exceeds 70%
          * scale in again when CPU utilization falls below 10%.
          */
-        // const scaling = this.service.autoScaleTaskCount({ maxCapacity: 6 });
-        // const cpu_utilization = this.service.metricCpuUtilization();
-        //
-        // scaling.scaleOnMetric(this.service_id + '-auto-scaling-metrics', {
-        //     adjustmentType: aws_applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
-        //     metric: cpu_utilization,
-        //     scalingSteps: [
-        //         { change: -1, upper: 10 },
-        //         { change: +1, lower: 60 },
-        //         { change: +3, lower: 85 },
-        //     ],
-        // });
+        const scaling = this.service.autoScaleTaskCount({ maxCapacity: 6 });
+        const cpu_utilization = this.service.metricCpuUtilization();
+
+        scaling.scaleOnMetric(this.service_id + '-auto-scaling-metrics', {
+            adjustmentType: aws_applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
+            metric: cpu_utilization,
+            scalingSteps: [
+                { change: -1, upper: 10 },
+                { change: +1, lower: 60 },
+                { change: +3, lower: 85 },
+            ],
+        });
 
         if (this.service_config.discovery_type === 'DNS') {
             const listener = mesh.service_discovery.getListener(this.service_namespace);

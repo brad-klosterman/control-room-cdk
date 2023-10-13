@@ -6,6 +6,8 @@ const SHARED_ENV = {
     AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
     ENVIRONMENT: 'development',
     GATEWAY_ENDPOINT: 'development.seon-gateway.com/graphql',
+    // GLOBAL_AGENT_HTTP_PROXY: '127.0.0.1:9901',
+    // GLOBAL_AGENT_HTTPS_PROXY: '127.0.0.1:9901',
     PORT: '4000',
     REDIS_HOST_ADDRESS: 'sesi50gr1hf9510.s1azzv.ng.0001.euc1.cache.amazonaws.com',
     SEON_REST_URL: 'https://api.staging.seon.network/',
