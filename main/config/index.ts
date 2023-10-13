@@ -1,4 +1,4 @@
-import { AvailableServices, ServiceConfig } from './seon.config.interfaces';
+import { AvailableServices, ServiceConfig } from './types';
 
 const SHARED_ENV = {
     APOLLO_GRAPH_REF: 'SEON@development',

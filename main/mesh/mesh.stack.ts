@@ -21,7 +21,7 @@ import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { ARecord, RecordTarget } from 'aws-cdk-lib/aws-route53';
 
 import { BaseStack } from '../base/base.stack';
-import { AvailableServices } from '../config/seon.config.interfaces';
+import { AvailableServices } from '../config/types';
 import { DiscoveryStack } from '../discovery/discovery.stack';
 
 export class MeshStack extends BaseStack {

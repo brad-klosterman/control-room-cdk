@@ -25,7 +25,7 @@ import {
 } from 'aws-cdk-lib/aws-servicediscovery';
 
 import { BaseStack } from '../base/base.stack';
-import { AvailableServices } from '../config/seon.config.interfaces';
+import { AvailableServices } from '../config/types';
 import { NetworkStack } from '../network/network.stack';
 
 export class DiscoveryStack extends BaseStack {

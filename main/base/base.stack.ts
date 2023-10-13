@@ -1,7 +1,7 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
-import { AvailableServices } from '../config/seon.config.interfaces';
+import { AvailableServices } from '../config/types';
 
 export class BaseStack extends Stack {
     /**

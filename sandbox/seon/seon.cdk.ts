@@ -134,15 +134,15 @@ createECSServiceStack({
     task_params: WORKFORCE_SERVICE_CONFIG.task_params,
 });
 
-createWebAppStack({
-    app_props: APP.props,
-    branch: CONTROL_ROOM_CONFIG.branch,
-    domain_name: DOMAIN_NAME,
-    environment_variables: CONTROL_ROOM_CONFIG.env,
-    repo: CONTROL_ROOM_CONFIG.repo,
-    scope: APP.cdk,
-    sub_domain: CONTROL_ROOM_CONFIG.sub_domain,
-    web_app_name: CONTROL_ROOM_CONFIG.name,
-});
+// createWebAppStack({
+//     app_props: APP.props,
+//     branch: CONTROL_ROOM_CONFIG.branch,
+//     domain_name: DOMAIN_NAME,
+//     environment_variables: CONTROL_ROOM_CONFIG.env,
+//     repo: CONTROL_ROOM_CONFIG.repo,
+//     scope: APP.cdk,
+//     sub_domain: CONTROL_ROOM_CONFIG.sub_domain,
+//     web_app_name: CONTROL_ROOM_CONFIG.name,
+// });
 
 APP.cdk.synth();

@@ -23,8 +23,8 @@ import { Role } from 'aws-cdk-lib/aws-iam';
 import { ILogGroup } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
-import { getServiceConfig } from '../../config/seon.config';
-import { AvailableServices, ServiceConfig } from '../../config/seon.config.interfaces';
+import { getServiceConfig } from '../../config';
+import { AvailableServices, ServiceConfig } from '../../config/types';
 import { MeshStack } from '../../mesh/mesh.stack';
 import { ECSPipeline } from '../../pipeline/ecs.pipeline';
 import { EnvoyContainer } from '../containers/envoy.container';
