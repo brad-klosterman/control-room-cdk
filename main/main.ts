@@ -1,6 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 
-import { DemoStack } from './demo/demo.stack';
 import { DiscoveryStack } from './discovery/discovery.stack';
 import { ECSStack } from './ecs/ecs.stack';
 import { RedisStack } from './elasticache/redis.stack';

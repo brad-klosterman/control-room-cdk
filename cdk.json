@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts zeon/seon.main.ts",
+  "app": "npx ts-node --prefer-ts-exts main/main.ts",
   "watch": {
     "include": ["**"],
     "exclude": [

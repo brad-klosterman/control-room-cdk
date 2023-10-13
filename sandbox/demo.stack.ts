@@ -23,7 +23,7 @@ import { LambdaSubscription, SqsSubscription } from 'aws-cdk-lib/aws-sns-subscri
 import { IQueue, Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 
-import { BaseStack } from '../base/base.stack';
+import { BaseStack } from '../main/base/base.stack';
 
 export class DemoStack extends BaseStack {
     /**
